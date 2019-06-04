@@ -359,7 +359,8 @@ void FullGameWindow::handleTimeout()
         checksum += F_incoming.cmd + F_incoming.wire + F_incoming.score;
         for (int i = 0 ; i<9; i++) checksum += F_incoming.pins[i];
         checksum += F_incoming.rounds;
-
+        qDebug() << "Incoming rounds: " << F_incoming.rounds;
+        qDebug() << "Incoming score: " << F_incoming.score;
         qDebug() << "My checksum is: " << checksum;
 
         int inChecksum = 0;
@@ -390,8 +391,15 @@ void FullGameWindow::handleTimeout()
         //qDebug() << "Ack: " << m_readData << endl;
       bool ack = QString(m_readData.mid(0,1)).toInt();
       qDebug() << "Ack: " << ack;
-      if (ack) waiting = false;
-      else sndMsg();
+      if (ack) {
+          waiting = false;
+          m_readData = "";
+
+      }
+      else {
+          sndMsg();
+          m_readData = "";
+      }
 
     }
 
@@ -540,21 +548,7 @@ void FullGameWindow::sndMsg(){
     serial->write(s);
     serial->write(ch);
 
-    //QEventLoop loop;
-    //QTimer::singleShot(50, &loop, SLOT(quit()));
-    //loop.exec();
-    //bool acknowledge = false;
-     //serial->read(*acknowledge, acknowledge.length)
-    //QByteArray acknowledge;
-    //acknowledge.append(serial->readAll());
-    //acknowledge.append(serial->readAll());
-    //qDebug() << "Acknowledgement: " << acknowledge.size() << " " << acknowledge ;
-    //m_ack =
-    //waiting = false;
-
-
-//loop.exec();
-}
+ }
 
 
 void FullGameWindow::sndScore(){

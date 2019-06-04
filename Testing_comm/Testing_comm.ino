@@ -84,12 +84,12 @@ analogWrite(TXControl,255); //Tramsmitting
 
 outgoing.wire = WIRE;
 Serial1.print(outgoing.wire);
-Serial.print("Sending wire");
+Serial.print("Sending wire ");
 Serial.println(outgoing.wire);
 
 if (outgoing.cmd<10) Serial1.print(0);
 Serial1.print(outgoing.cmd);
-Serial.print("Sending cmd");
+Serial.print("Sending cmd ");
 Serial.println(outgoing.cmd);
 
 for (int i = 0; i<9; i++) {Serial1.print(outgoing.pins[i]); Serial.print("Sending pin ");  Serial.print(i);
@@ -97,15 +97,30 @@ Serial.println(outgoing.pins[i]);}
 
 if (outgoing.rounds<10) Serial1.print(0);
 Serial1.print(outgoing.rounds);
- Serial.print("Sending rounds ");
-  Serial.print(outgoing.rounds);
+Serial.print("Sending rounds ");
+Serial.println(outgoing.rounds);
 
-int checksum = 0;
-checksum += outgoing.wire + outgoing.cmd + outgoing.rounds;
-for (int i = 0; i<9; i++) checksum +=outgoing.pins[i];
 
-Serial1.print(checksum);
- Serial.print("Sending checksum "); Serial.println(checksum);
+
+if (outgoing.score<100) Serial1.print(0);
+if (outgoing.score<10) Serial1.print(0);
+Serial1.print(outgoing.score);
+Serial.print("Sending score ");
+Serial.println(outgoing.score);
+
+
+
+
+outgoing.checksum = 0;
+outgoing.checksum += outgoing.wire + outgoing.cmd + outgoing.rounds + outgoing.score;
+for (int i = 0; i<9; i++) outgoing.checksum +=outgoing.pins[i];
+
+if (outgoing.checksum<100) Serial1.print(0);
+if (outgoing.checksum<10) Serial1.print(0);
+Serial1.print(outgoing.checksum);
+Serial.print("Sending checksum ");
+Serial.println(outgoing.checksum);
+
 //Serial1.println();
 //Serial1.flush();
 
@@ -114,7 +129,10 @@ analogWrite(TXControl,0); //Receiving
 
 rcvMsg();
 delay(10);
-
+if (incoming.cmd == 6) {
+  sndMsg();
+  Serial.println("Repeating message due to an error");
+  }
 //CHECKSUM HANDLING, CURRENTLY OFFLINE
 //if (incoming.cmd == 6 && resendCounter<5) { Serial.println("RPI didn't receive checksum, resending"); sndMsg(); resendCounter++; }
 //else resendCounter = 0;
@@ -156,14 +174,21 @@ delay (100);
 
   
 
-   //outgoing.wire = WIRE;
-   //outgoing.cmd = 24;
+   outgoing.wire = WIRE;
+   outgoing.cmd = 1;
    //for (int i = 0; i<9; i++) outgoing.pins[i] = Serial.read();
-  // outgoing.rounds = 5;
-  // outgoing.score = 20;
-  // sndMsg();
-  // delay(500);
+   outgoing.pins[0] = 1;
+   outgoing.pins[2] = 1;
+   outgoing.pins[4] = 1;
+   outgoing.pins[6] = 1;
+   outgoing.pins[8] = 1;
+
+   outgoing.rounds = 5;
+   outgoing.score = 20;
   
+   if (incoming.cmd > 0) {sndMsg();
+   delay(500);
+   }
   
 
 }
