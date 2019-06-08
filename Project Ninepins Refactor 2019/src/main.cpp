@@ -57,9 +57,13 @@ uint8_t currentPins[PINCOUNT] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 uint8_t toMAG[PINCOUNT] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 bool noneFallen = false;
+bool newState = false;
+bool isSettingPins = false;
+bool isError = false;
+bool errorButtonPressed = false;
 
 uint8_t currentGameType = 0;
-
+uint16_t scoreCounter = 0;
 uint8_t roundsCounter = 0;
 uint8_t knotCounter = 0;
 
@@ -67,7 +71,21 @@ uint16_t overloadCounter = 0;
 
 enum gameType{fullgame, partialgame};
 
-enum commands{knotCmd = 3, repeatMsgCmd = 6};
+enum commands{
+  knotCmd = 3, 
+  repeatMsgCmd = 6,  
+  checkPinsCmd = 22, 
+  checkLedCmd = 23, 
+  fullGameCmd = 24, 
+  partialGameCmd = 25, 
+  lowerPinsCmd = 26,
+  deleteIncomingCmd = 100,
+  setStateCmd = 200,
+  settingPinsCmd = 3, //setting pins and confirming unknotting are the same command
+  checkGutterCmd = 201,
+  confirmNewStateCmd = 101,
+  cancelNewStateCmd = 102
+  };
 
 struct message {
     int cmd = 0;
@@ -168,6 +186,133 @@ void fixOverload()
 
 }
 
+
+void showCircle()
+{
+  debugPrintln("Animating circle of LEDs");
+  for (int i = 0; i < PINCOUNT; i++)
+  {
+    if (currentPins[i] > 0) lightLed(LED[i], true);
+  }
+
+  lightLed(LED[0], true);
+  delay(LIGHTTIME);
+  lightLed(LED[0], true);
+
+  lightLed(LED[1], true);
+  delay(LIGHTTIME);
+  lightLed(LED[1], true);
+
+  lightLed(LED[3], true);
+  delay(LIGHTTIME);
+  lightLed(LED[3], true);
+
+  lightLed(LED[6], true);
+  delay(LIGHTTIME);
+  lightLed(LED[6], true);
+
+  lightLed(LED[8], true);
+  delay(LIGHTTIME);
+  lightLed(LED[8], true);
+
+  lightLed(LED[7], true);
+  delay(LIGHTTIME);
+  lightLed(LED[7], true);
+
+  lightLed(LED[5], true);
+  delay(LIGHTTIME);
+  lightLed(LED[5], true);
+
+  lightLed(LED[2], true);
+  delay(LIGHTTIME);
+  lightLed(LED[2], true);
+
+  lightLed(LED[0], true);
+  lightLed(LED[1], true);
+  lightLed(LED[3], true);
+  lightLed(LED[6], true);
+  lightLed(LED[8], true);
+  lightLed(LED[7], true);
+  lightLed(LED[5], true);
+  lightLed(LED[2], true);  
+}
+
+//Lights up all the pin leds
+void showAll() 
+{
+debugPrintln("Let there be light");
+for (int i = 0; i < PINCOUNT; i++) lightLed(LED[i], true);
+delay(2*LIGHTTIME);
+for (int i = 0; i < PINCOUNT; i++) lightLed(LED[i], false);
+delay(2*LIGHTTIME);
+for (int i = 0; i < PINCOUNT; i++) lightLed(LED[i], true);
+}
+
+
+/*  
+Lights up leds corresponding to fallen pins. 
+If the fallen pins form a circle and the game type is "Full Game", 
+it displays an animated circle. If the player downs all the pins in one go,
+it blinks several times.
+*/
+void showFallenPins()
+{
+  uint8_t fallenCounter = 0;
+  
+  for (int i = 0; i < PINCOUNT; i++)
+  {
+    if (currentPins[i] > 0)
+    {
+      fallenCounter++;
+      lightLed(LED[i], true);
+      toMAG[i]++;
+    } else lightLed(LED[i], false);
+  }
+
+  if ((fallenCounter == 8) && (currentPins[4] == 0) && (currentGameType == fullgame))
+  {
+    showCircle();
+  }
+
+  if (fallenCounter == 9)
+  {
+    showAll();
+  }
+  
+}
+
+bool rcvMsg(); //rcvMsg needs to be declared here, otherwise the compiler screams.
+
+bool setState()
+{
+  debugPrintln("***********CHANGING STATE***********");
+  while (true)
+  {
+    rcvMsg();
+    if (incoming.cmd == confirmNewStateCmd)
+    {
+      roundsCounter = incoming.rounds;
+      scoreCounter = incoming.score;
+      for (int i = 0; i < PINCOUNT; i++)
+      {
+       toMAG[i] = currentPins[i] = incoming.pins[i];
+      }
+      showFallenPins();
+      return true;
+    }
+
+    if (incoming.cmd == cancelNewStateCmd)
+    {
+      lightLed(LED_ERROR, false);
+      return false;
+    }  
+  }  
+}
+
+
+//******************************** COMMUNICATION ***********************************
+
+
 //calculates checksum of a message
 void calculateChecksum(message msg){
 msg.checksum = 0;
@@ -182,7 +327,9 @@ for (int i = 0; i < PINCOUNT; i++) checksum += msg.pins[i];
 }
 
 
-//******************************** COMMUNICATION ***********************************
+
+
+
 //receive message
 bool rcvMsg(){
   startReceiving();
@@ -224,51 +371,95 @@ bool rcvMsg(){
 
 //sending message
 void sndMsg(){
-startTransmitting();
+  startTransmitting();
 
-//sending WIRE
-outgoing.wire = WIRE;
-COMM.print(outgoing.wire);
-debugPrintln("Sending wire " + outgoing.wire);
+  //sending WIRE
+  outgoing.wire = WIRE;
+  COMM.print(outgoing.wire);
+  debugPrintln("Sending wire " + outgoing.wire);
 
-//sending CMD
-if (outgoing.cmd<10) COMM.print(0);
-COMM.print(outgoing.cmd);
-debugPrintln("Sending cmd " + outgoing.cmd);
+  //sending CMD
+  if (outgoing.cmd<10) COMM.print(0);
+  COMM.print(outgoing.cmd);
+  debugPrintln("Sending cmd " + outgoing.cmd);
 
-//sending PINS
-for (int i = 0; i < PINCOUNT; i++) {
-  COMM.print(outgoing.pins[i]); 
-  debugPrintln((String)"Sending pin " + i + " " + outgoing.pins[i]);
-}
-
-//sending ROUNDS
-if (outgoing.rounds<10) COMM.print(0);
-COMM.print(outgoing.rounds);
-debugPrintln("Sending rounds " + outgoing.rounds);
-
-//sending SCORE
-if (outgoing.score<100) COMM.print(0);
-if (outgoing.score<10) COMM.print(0);
-COMM.print(outgoing.score);
-debugPrintln("Sending score " + outgoing.score);
-
-//sending CHECKSUM
-calculateChecksum(outgoing);
-if (outgoing.checksum<100) COMM.print(0);
-if (outgoing.checksum<10) COMM.print(0);
-COMM.print(outgoing.checksum);
-debugPrintln("Sending checksum " + outgoing.checksum);
-
-delay(100); // To send message over rs485, you need delays to ensure the message went through
-
-rcvMsg();
-if (incoming.cmd == repeatMsgCmd) {
-  sndMsg();
-  debugPrintln("Repeating message due to an error");
+  //sending PINS
+  for (int i = 0; i < PINCOUNT; i++) {
+    COMM.print(outgoing.pins[i]); 
+    debugPrintln((String)"Sending pin " + i + " " + outgoing.pins[i]);
   }
+
+  //sending ROUNDS
+  if (outgoing.rounds<10) COMM.print(0);
+  COMM.print(outgoing.rounds);
+  debugPrintln("Sending rounds " + outgoing.rounds);
+
+  //sending SCORE
+  if (outgoing.score<100) COMM.print(0);
+  if (outgoing.score<10) COMM.print(0);
+  COMM.print(outgoing.score);
+  debugPrintln("Sending score " + outgoing.score);
+
+  //sending CHECKSUM
+  calculateChecksum(outgoing);
+  if (outgoing.checksum<100) COMM.print(0);
+  if (outgoing.checksum<10) COMM.print(0);
+  COMM.print(outgoing.checksum);
+  debugPrintln("Sending checksum " + outgoing.checksum);
+
+  delay(100); // To send message over rs485, you need delays to ensure the message went through
+
+  rcvMsg();
+  if (incoming.cmd == repeatMsgCmd) {
+    sndMsg();
+    debugPrintln("Repeating message due to an error");
+    }
 }
 
+
+void readMsg()
+{
+  if (incoming.wire == WIRE) 
+  {
+    debugPrintln("Reading message");
+    switch (incoming.cmd)
+    {
+      case deleteIncomingCmd:
+      lightLed(LED_START, false);
+      deleteMessage(incoming);
+      loop();
+      break;
+      
+      case setStateCmd:
+      lightLed(LED_START, false);
+      newState = setState();
+      if (newState) lightLed(LED_ERROR, true);
+      lightLed(LED_START, true);
+      deleteMessage(incoming);
+      break;
+
+      case settingPinsCmd:
+      isSettingPins = true;
+      deleteMessage(incoming);
+      delay(100);
+      break;
+
+      case checkGutterCmd:
+      lightLed(LED_START, false);
+      lightLed(LED_ERROR, true);
+      isError = checkError();
+      errorButtonPressed = true;
+      deleteMessage(incoming);
+      debugPrintln("The gutter button has been pressed");
+      break;
+    
+      default:
+      newState = false;
+      break;
+    }
+  }
+
+}
 
 
 
@@ -329,11 +520,25 @@ bool checkSettingPins() {
     else return false;
 }
 
-
-
-
-
-
+//checking which pins have fallen - returns true if all are standing, false if at least one has fallen
+bool checkPins() {
+  //checking if there are any messages while checking for fallen pins
+  bool msgReceived = false;
+  msgReceived = rcvMsg(); 
+  if( msgReceived) { readMsg(); msgReceived =false;}
+  
+    noneFallen = false;
+    int countStandingPins = 0;
+    for (int i = 0; i < PINCOUNT; i++)
+    {
+      if (digitalRead(PXSENSOR[i]) != LOW) 
+      {
+        countStandingPins++;
+      }
+    }
+    if (countStandingPins == PINCOUNT)  return true;
+    else return false;
+}
 
 
 // setting pins 
@@ -448,6 +653,51 @@ void settingPins(int gType)
 }
 
 
+void startGame()
+{
+  deleteMessage(incoming);
+  debugPrintln("Project Ninepins - wired version");
+  while (true)
+  {
+    rcvMsg();
+    if (incoming.wire == WIRE)
+    {
+      switch (incoming.cmd)
+      {
+      case settingPinsCmd:
+        debugPrintln("Setting Pins");
+        settingPins(fullgame);
+        break;
+      
+      case checkPinsCmd:
+        debugPrintln("Checking Pins");
+        //checkPins
+        break;
+      
+      case checkLedCmd:
+        debugPrintln("Checking LEDs");
+        settingPins(fullgame);
+        break;
+
+      case fullGameCmd:
+        debugPrintln("Starting Full Game");
+        settingPins(fullgame);
+        break;
+
+      case partialGameCmd:
+        debugPrintln("Starting Full Game");
+        settingPins(fullgame);
+        break;
+      
+      default:
+        break;
+      }
+    }
+    
+
+  }
+}
+
 
 
 
@@ -506,5 +756,5 @@ void loop() {
   lightLed(LED_ERROR,true);
   lightLed(LED_START,true);
   deleteMessage(outgoing);
-  startGame();
+  //startGame();
 }
