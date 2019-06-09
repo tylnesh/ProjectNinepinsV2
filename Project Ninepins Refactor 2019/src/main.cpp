@@ -47,9 +47,10 @@ uint8_t LED[9] = {2, 3, 4, 5, 6, 7, 8, 9, 10};
 #define KNOTTHRESHOLD 8
 #define PINSUPTHRESHOLD 5
 
-#define PINSUPTIME 15000
-#define PINSWAITUP 1800
-#define TIMETOSETTLETRESHOLD 100000
+#define PINS_UP_TIME 15000
+#define PINS_WAIT_UP 1800
+#define TIME_TO_SETTLE_TRESHOLD 100000
+#define TIME_TO_COUNT_POINTS_TRESHOLD 4000
 
 //STATE variables
 
@@ -59,14 +60,15 @@ uint8_t toMAG[PINCOUNT] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 bool noneFallen = false;
 bool newState = false;
 bool isSettingPins = false;
-bool isError = false;
-bool errorButtonPressed = false;
+bool isGutter = false;
+bool gutterButtonPressed = false;
 
 uint8_t currentGameType = 0;
+
 uint16_t scoreCounter = 0;
 uint8_t roundsCounter = 0;
-uint8_t knotCounter = 0;
 
+uint8_t knotCounter = 0;
 uint16_t overloadCounter = 0;
 
 enum gameType{fullgame, partialgame};
@@ -84,7 +86,9 @@ enum commands{
   settingPinsCmd = 3, //setting pins and confirming unknotting are the same command
   checkGutterCmd = 201,
   confirmNewStateCmd = 101,
-  cancelNewStateCmd = 102
+  cancelNewStateCmd = 102,
+  confirmGutterCmd = 206,
+  cancelGutterCmd = 205
   };
 
 struct message {
@@ -117,6 +121,11 @@ void startReceiving(){
 void startTransmitting(){
   analogWrite(TXControl, 255); //Transmitting
 }
+
+// declaring functions
+bool checkPins();
+void resetPinCount();
+void game(uint8_t gType);
 
 // Controlling the LEDs - Passing "true" sets the LEDS to turn on, false dims them down.
 void lightAllLed(bool b)
@@ -416,6 +425,53 @@ void sndMsg(){
     }
 }
 
+bool checkGutter()
+{
+  debugPrintln("Checking whether the ball hit the gutter");
+  bool tempPins[9] = {0,0,0,0,0,0,0,0,0}; 
+  for (int i = 0; i < PINCOUNT; i++) tempPins[i] = currentPins[i];
+  lightLed(LED_ERROR, true);
+
+  while (true)
+  {
+    if (digitalRead(GATE_RAMP) == HIGH) lightLed(LED_START, true);
+    checkPins();
+    showFallenPins();
+
+    rcvMsg();
+    if (incoming.wire == WIRE)
+    {
+      switch (incoming.cmd)
+      {
+      case cancelGutterCmd:
+        debugPrintln("No gutter");
+        lightLed(LED_ERROR, false);
+        return false;
+      
+      case confirmGutterCmd:
+        debugPrintln("Gutter confirmed");
+        if (currentGameType == fullgame)
+        {
+          resetPinCount();
+        }
+        else
+        {
+          for (int i = 0; i < PINCOUNT; i++) {
+            toMAG[i] = currentPins[i] = outgoing.pins[i] = tempPins[i];
+            lightLed(LED[i], false);
+          }
+          lightLed(LED_ERROR, true);
+          showFallenPins();
+          return true;
+        }
+    
+      default:
+        break;
+      }
+    }
+  }
+}
+
 
 void readMsg()
 {
@@ -447,10 +503,10 @@ void readMsg()
       case checkGutterCmd:
       lightLed(LED_START, false);
       lightLed(LED_ERROR, true);
-      isError = checkError();
-      errorButtonPressed = true;
+      gutterButtonPressed = true;
       deleteMessage(incoming);
       debugPrintln("The gutter button has been pressed");
+      isGutter = checkGutter();
       break;
     
       default:
@@ -558,7 +614,7 @@ void settingPins(int gType)
     uint8_t upSensor = 0; 
     bool pinsUp = false;
     
-    while (millis() < pinsUpTimer + PINSUPTIME) {
+    while (millis() < pinsUpTimer + PINS_UP_TIME) {
       digitalWrite(ENGINE_RIGHT, HIGH);
       
       //CHECKING IF THE ENGINES ARE BEING OVERLOADED
@@ -596,7 +652,7 @@ void settingPins(int gType)
       //if pins are up, we set them down to the ground
       if (pinsUp) {
         stopEngines();
-        delay(PINSWAITUP);
+        delay(PINS_WAIT_UP);
         
         if(gType == fullgame) 
         {
@@ -635,7 +691,7 @@ void settingPins(int gType)
       }
 
       uint32_t timeToSettle = millis();
-      while (millis() < timeToSettle + TIMETOSETTLETRESHOLD)
+      while (millis() < timeToSettle + TIME_TO_SETTLE_TRESHOLD)
       {
         if (digitalRead(PXSENSOR_DOWN) == LOW) 
         {
@@ -651,6 +707,100 @@ void settingPins(int gType)
   }
   }
 }
+
+void countPoints()
+{
+    
+  for (int i = 0; i < 9; i++)
+  {
+    if (currentPins[i] > 0) 
+    {
+      outgoing.pins[i] = 1;
+      scoreCounter++;
+    }  
+  }
+  outgoing.score = scoreCounter;
+} 
+
+
+//Game logic function
+void game(uint8_t gType)
+{
+  currentGameType = gType;
+  lightLed(LED_ERROR, false);
+  if (currentGameType == fullgame) 
+  {
+    debugPrintln("FULL GAME");
+    roundsCounter = 0;
+    scoreCounter = 0;
+  }
+  
+  if (currentGameType == partialgame) debugPrintln("PARTIAL GAME");
+  
+  lightAllLed(false);
+
+  while (true)
+  {
+    isGutter = false;
+    isSettingPins = false;
+    noneFallen = true;
+    gutterButtonPressed = false;
+    int gateSensorCounter = 0;
+    lightLed(LED_ERROR, false);
+    resetPinCount();
+    lightAllLed(false);
+    lightLed(LED_START, true);
+
+    //Waiting for the ball to go through the gate, or command from the user
+    while (gateSensorCounter < 10 && !gutterButtonPressed && !isSettingPins) 
+    {
+      if (rcvMsg()) readMsg();
+      if (digitalRead(GATE_RAMP) == HIGH) gateSensorCounter++;
+    }
+
+    lightLed(LED_START, false);
+
+    //if you trigger setting pins with a command, it bypasses counting points
+    if (!isSettingPins)
+    {
+      roundsCounter++;
+      uint32_t timeToCountPoints = millis();
+      while ( (millis() < timeToCountPoints + TIME_TO_COUNT_POINTS_TRESHOLD) && !gutterButtonPressed)
+      {
+        checkPins();
+        showFallenPins();
+      }
+
+      //if the ball didn't touch the sides, count points
+      if (!isGutter) countPoints();
+      outgoing.wire = WIRE;
+      outgoing.cmd = currentGameType;
+      outgoing.rounds = roundsCounter;
+      sndMsg();
+      deleteMessage(outgoing);
+
+      //if at least one pin has fallen, run settingPins function
+      if (!noneFallen) 
+      {
+        settingPins(currentGameType);
+      }
+
+    } 
+    
+
+
+    
+  }
+  
+  
+  
+  
+  
+  
+
+
+}
+
 
 
 void startGame()
@@ -671,24 +821,24 @@ void startGame()
       
       case checkPinsCmd:
         debugPrintln("Checking Pins");
-        //checkPins
+        checkPins();
         break;
       
       case checkLedCmd:
         debugPrintln("Checking LEDs");
-        settingPins(fullgame);
+        checkLED();
         break;
 
       case fullGameCmd:
         debugPrintln("Starting Full Game");
-        settingPins(fullgame);
+        game(fullgame);
         break;
 
       case partialGameCmd:
         debugPrintln("Starting Full Game");
-        settingPins(fullgame);
+        game(partialgame);
         break;
-      
+    
       default:
         break;
       }
@@ -756,5 +906,5 @@ void loop() {
   lightLed(LED_ERROR,true);
   lightLed(LED_START,true);
   deleteMessage(outgoing);
-  //startGame();
+  startGame();
 }
