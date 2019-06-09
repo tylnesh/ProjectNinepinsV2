@@ -71,7 +71,7 @@ uint8_t roundsCounter = 0;
 uint8_t knotCounter = 0;
 uint16_t overloadCounter = 0;
 
-enum gameType{fullgame, partialgame};
+enum gameType{fullgame=1, partialgame=2};
 
 enum commands{
   knotCmd = 3, 
@@ -169,7 +169,7 @@ void checkLED()
       analogWrite(LED[i], 0);
     }  
      analogWrite(LED_START, BRIGHTNESS); delay(200); analogWrite(LED_START, 0);
-     analogWrite(LED_ERROR,BRIGHTNESS); delay(200); analogWrite(LED_ERROR, 0);
+     analogWrite(LED_ERROR, BRIGHTNESS); delay(200); analogWrite(LED_ERROR, 0);
      analogWrite(LED_START, BRIGHTNESS); delay(200); analogWrite(LED_START, 0);
   }
 
@@ -735,7 +735,11 @@ void game(uint8_t gType)
     scoreCounter = 0;
   }
   
-  if (currentGameType == partialgame) debugPrintln("PARTIAL GAME");
+  if (currentGameType == partialgame) 
+  {
+    debugPrintln("PARTIAL GAME");
+    roundsCounter = 0; //score only zeores in full game, as partial game is a continuation of the full game.
+  }
   
   lightAllLed(false);
 
@@ -747,8 +751,11 @@ void game(uint8_t gType)
     gutterButtonPressed = false;
     int gateSensorCounter = 0;
     lightLed(LED_ERROR, false);
-    resetPinCount();
-    lightAllLed(false);
+    if (currentGameType == fullgame) 
+    {
+      resetPinCount(); // pin count doesn not reset between rounds in partialgame 
+      lightAllLed(false);
+    }
     lightLed(LED_START, true);
 
     //Waiting for the ball to go through the gate, or command from the user
