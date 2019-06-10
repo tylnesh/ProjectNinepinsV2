@@ -283,7 +283,7 @@ void showFallenPins()
     showCircle();
   }
 
-  if (fallenCounter == 9)
+  if (fallenCounter == PINCOUNT)
   {
     showAll();
   }
@@ -428,7 +428,7 @@ void sndMsg(){
 bool checkGutter()
 {
   debugPrintln("Checking whether the ball hit the gutter");
-  bool tempPins[9] = {0,0,0,0,0,0,0,0,0}; 
+  bool tempPins[PINCOUNT] = {0,0,0,0,0,0,0,0,0}; 
   for (int i = 0; i < PINCOUNT; i++) tempPins[i] = currentPins[i];
   lightLed(LED_ERROR, true);
 
@@ -665,7 +665,7 @@ void settingPins(int gType)
           uint8_t lockMAG = 0; // variable to store number of locked pins
           for (int i = 0; i < PINCOUNT; i++) if (toMAG[i] > 0) lockMAG++;
           debugPrintln("Number of locked pins: " + lockMAG);
-          if (lockMAG < 9)
+          if (lockMAG < PINCOUNT)
           {
             for (int i = 0; i < PINCOUNT; i++) if (toMAG[i] > 0) digitalWrite(MAG[i], HIGH);
             digitalWrite(ENGINE_RIGHT, HIGH);
@@ -711,7 +711,7 @@ void settingPins(int gType)
 void countPoints()
 {
     
-  for (int i = 0; i < 9; i++)
+  for (int i = 0; i < PINCOUNT; i++)
   {
     if (currentPins[i] > 0) 
     {
@@ -898,7 +898,7 @@ void setup() {
   digitalWrite(ENGINE_RIGHT, LOW);
   digitalWrite(ENGINE_SLOW, LOW);
 
-  for (int i = 0; i < 9; i++) digitalWrite(MAG[i], LOW);
+  for (int i = 0; i < PINCOUNT; i++) digitalWrite(MAG[i], LOW);
 
   currentGameType = fullgame;
 
