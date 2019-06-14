@@ -41,7 +41,7 @@ public:
 
     void loadMsg();
     int getNumberFromQString(const QString &xString);
-    void parseMsg();
+    void savePoints();
     void sndMsg();
     void sndScore();
 
@@ -76,7 +76,7 @@ private slots:
 
 private:
     Ui::FullGameWindow *ui;
-    Status message;
+    Status state;
 
 
 

@@ -74,6 +74,7 @@ union Status {
         uint16_t checksum;
     };
     std::array<uint8_t, statusLength> bytes;
+    
     uint8_t getPoints()
     {
         uint8_t points = 0;

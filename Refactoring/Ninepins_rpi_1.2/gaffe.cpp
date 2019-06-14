@@ -46,8 +46,6 @@ void Gaffe::on_gaffeConfirmedButton_clicked()
     gaffeSwitch = false;
     gaffeConfirmed = true;
     gaffeRunning = false;
-
-    pointsGF = pointsTmp;
     scoreGF = scoreTmp;
     for (int i = 0; i < 9; i++) pinsGF[i] = pinsTmp[i];
 

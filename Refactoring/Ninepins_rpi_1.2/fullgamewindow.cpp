@@ -47,9 +47,9 @@ FullGameWindow::FullGameWindow(QWidget *parent) :
     ui(new Ui::FullGameWindow)
 {
     isPartial = false;
-    pointsGF = 0;
     scoreGF = 0;
     roundsGF = 0;
+    currentGameType = Game::FULLGAME;
 
     ui->setupUi(this);
     this ->setWindowFlags(Qt::Window);
@@ -86,7 +86,7 @@ FullGameWindow::FullGameWindow(QWidget *parent) :
 
     } else qDebug() << "RS485 error msg: " << serial->errorString();
 
-    message.cmd = FULLGAME;
+    state.cmd = FULLGAME;
     sndMsg();
     sndScore();
 
@@ -105,32 +105,32 @@ void FullGameWindow::onRedrawGUI()
 {
 
     ui->scoreLCD->display(scoreGF);
-    ui->roundsLCD->display(roundsGF);
-    ui->pointsLCD->display(pointsGF);
+    ui->roundsLCD->display(currentRound);
+    ui->pointsLCD->display(state.getPoints());
 
 
     {
-        if (!pinsGF[0]) ui->pin1->setIcon(QIcon(":/images/kolok1.png")); else ui->pin1->setIcon(QIcon(":/images/kolok2.png"));
-    if (!pinsGF[1]) ui->pin2->setIcon(QIcon(":/images/kolok1.png")); else ui->pin2->setIcon(QIcon(":/images/kolok2.png"));
-    if (!pinsGF[2]) ui->pin3->setIcon(QIcon(":/images/kolok1.png")); else ui->pin3->setIcon(QIcon(":/images/kolok2.png"));
-    if (!pinsGF[3]) ui->pin4->setIcon(QIcon(":/images/kolok1.png")); else ui->pin4->setIcon(QIcon(":/images/kolok2.png"));
-    if (!pinsGF[4]) ui->pin5->setIcon(QIcon(":/images/kolok1.png")); else ui->pin5->setIcon(QIcon(":/images/kolok2.png"));
-    if (!pinsGF[5]) ui->pin6->setIcon(QIcon(":/images/kolok1.png")); else ui->pin6->setIcon(QIcon(":/images/kolok2.png"));
-    if (!pinsGF[6]) ui->pin7->setIcon(QIcon(":/images/kolok1.png")); else ui->pin7->setIcon(QIcon(":/images/kolok2.png"));
-    if (!pinsGF[7]) ui->pin8->setIcon(QIcon(":/images/kolok1.png")); else ui->pin8->setIcon(QIcon(":/images/kolok2.png"));
-    if (!pinsGF[8]) ui->pin9->setIcon(QIcon(":/images/kolok1.png")); else ui->pin9->setIcon(QIcon(":/images/kolok2.png"));
+    if (!state.pins[0]) ui->pin1->setIcon(QIcon(":/images/kolok1.png")); else ui->pin1->setIcon(QIcon(":/images/kolok2.png"));
+    if (!state.pins[1]) ui->pin2->setIcon(QIcon(":/images/kolok1.png")); else ui->pin2->setIcon(QIcon(":/images/kolok2.png"));
+    if (!state.pins[2]) ui->pin3->setIcon(QIcon(":/images/kolok1.png")); else ui->pin3->setIcon(QIcon(":/images/kolok2.png"));
+    if (!state.pins[3]) ui->pin4->setIcon(QIcon(":/images/kolok1.png")); else ui->pin4->setIcon(QIcon(":/images/kolok2.png"));
+    if (!state.pins[4]) ui->pin5->setIcon(QIcon(":/images/kolok1.png")); else ui->pin5->setIcon(QIcon(":/images/kolok2.png"));
+    if (!state.pins[5]) ui->pin6->setIcon(QIcon(":/images/kolok1.png")); else ui->pin6->setIcon(QIcon(":/images/kolok2.png"));
+    if (!state.pins[6]) ui->pin7->setIcon(QIcon(":/images/kolok1.png")); else ui->pin7->setIcon(QIcon(":/images/kolok2.png"));
+    if (!state.pins[7]) ui->pin8->setIcon(QIcon(":/images/kolok1.png")); else ui->pin8->setIcon(QIcon(":/images/kolok2.png"));
+    if (!state.pins[8]) ui->pin9->setIcon(QIcon(":/images/kolok1.png")); else ui->pin9->setIcon(QIcon(":/images/kolok2.png"));
     }
 }
 
 void FullGameWindow::onCheckGaffe(){
     if (gaffeSwitch && !gaffeRunning) {
 
-        pointsTmp = pointsGF;
+        pointsTmp = state.getPoints();
         scoreTmp = scoreGF;
-        for (int i = 0; i < 9; i++) pinsTmp[i] = pinsGF[i];
+        for (size_t i = 0; i < PINS; i++) pinsTmp[i] = pinsGF[i];
 
-        Gaffe gaffeWindow(this, &message);
-        message.cmd = CHECKGAFFE;
+        Gaffe gaffeWindow(this, &state);
+        state.cmd = CHECKGAFFE;
 
         sndMsg();
         gaffeRunning = true;
@@ -191,11 +191,7 @@ void FullGameWindow::on_pin8_clicked()
 
 void FullGameWindow::on_settingPinsButton_clicked()
 {
-
-    //QEventLoop loop;
-    //QTimer::singleShot(50, &loop, SLOT(quit()));
-    //loop.exec();
-    message.cmd = SETTINGPINS;
+    state.cmd = SETTINGPINS;
     sndMsg();
 
 
@@ -203,9 +199,9 @@ void FullGameWindow::on_settingPinsButton_clicked()
 
 void FullGameWindow::on_changeStateButton_clicked()
 {
-    message.cmd = CHANGE;
+    state.cmd = CHANGE;
     sndMsg();
-    ChangerWindow ch(this, &message);
+    ChangerWindow ch(this, &state);
     ch.exec();
     while (ch.isVisible()) {}
 
@@ -218,24 +214,20 @@ void FullGameWindow::on_changeStateButton_clicked()
 
     }
     else {
-        //again with the loop. I suspect I added it to make sure the message goes through
-        //    QEventLoop loop;
-        //    QTimer::singleShot(50, &loop, SLOT(quit()));
-        //    loop.exec();
         sndMsg();
     }
 }
 
 void FullGameWindow::on_endGameButton_clicked()
 {
-    message.cmd = ENDGAME;
+    state.cmd = ENDGAME;
     sndMsg();
 
     //stopping the thread checking the Red Gaffe Button
     buttonThread->stop = true;
 
-    currentRound = pointsGF = roundsGF = cmdGF = 0;
-    for (int i = 0; i<9; i++) pinsGF[i] = 0;
+    currentRound = roundsGF = cmdGF = 0;
+    for (size_t i = 0; i < PINS; i++) pinsGF[i] = 0;
     gaffeSwitch = false;
 
     //delay allowing the pin setting mechanism to finish it's job, before BFUs start new game
@@ -261,61 +253,11 @@ void FullGameWindow::handleTimeout()
     if (serialReadData.isEmpty()) {
     } else {
 
-        if (serialReadData.size() < statusLength)
-            return;
-        Status* state = reinterpret_cast<Status*>(serialReadData.data());
+        if (serialReadData.size() < statusLength)  return;
+        Status *received = reinterpret_cast<Status*>(serialReadData.data());
 
-
-
-        //reading cmd
-        if (QString(serialReadData.mid(1,1)).toInt() == 0)  F_incoming.cmd = QString(serialReadData.mid(2,1)).toInt();
-        else F_incoming.cmd = QString(serialReadData.mid(1,2)).toInt();
-
-        //reading pins
-        for (int i = 0 ; i<9; i++) {
-            F_incoming.pins[i] = QString(serialReadData.mid(i+3,1)).toInt();
-        }
-        //reading rounds
-        if (QString(serialReadData.mid(12,1)).toInt() == 0) F_incoming.rounds = QString(serialReadData.mid(13,1)).toInt();
-        else F_incoming.rounds = QString(serialReadData.mid(12,2)).toInt();
-
-        //reading score
-        if (QString(serialReadData.mid(14,1)).toInt() == 0)
-        {
-            if(QString(serialReadData.mid(15,1)).toInt() == 0) F_incoming.score = QString(serialReadData.mid(16,1)).toInt();
-            else {
-                F_incoming.score = QString(serialReadData.mid(15,2)).toInt();
-            }
-        }
-        else {
-            F_incoming.score = QString(serialReadData.mid(14,3)).toInt();
-        }
-
-        //reading checksum
-        if (QString(serialReadData.mid(17,1)).toInt() == 0)
-        {
-            if(QString(serialReadData.mid(18,1)).toInt() == 0) F_incoming.checksum = QString(serialReadData.mid(19,1)).toInt();
-            else {
-                F_incoming.checksum = QString(serialReadData.mid(18,2)).toInt();
-            }
-        }
-        else {
-            F_incoming.checksum = QString(serialReadData.mid(17,3)).toInt();
-        }
-
-
-
-          int checksum = 0 + F_incoming.wire +  F_incoming.cmd + F_incoming.rounds +F_incoming.score;
-          for (int i = 0; i < 9; i++) checksum += F_incoming.pins[i];
-
-          qDebug() << "Incoming checksum is: " << F_incoming.checksum;
-          qDebug() << "Calculated checksum is: " << checksum;
-
-
-        if (checksum != F_incoming.checksum) { cmdOutGF = CHECKSUMNOTMATCH; sndMsg(); cmdOutGF = FULLGAMEMSG; }
-
-        if (F_incoming.wire == DUEWIRE && F_incoming.cmd == FULLGAMEMSG) { parseMsg(); sndScore();}
-        if (F_incoming.wire == DISPLAYWIRE && F_incoming.cmd == CHECKSUMNOTMATCH) {sndScore();}
+        uint16_t tempChecksum = std::accumulate(received->bytes.begin(), received->bytes.end() - sizeof(Status::checksum), uint16_t(0));
+        if (received->checksum == tempChecksum) state = *received;
 
 
         serialReadData = "";
@@ -336,106 +278,48 @@ void FullGameWindow::handleError(QSerialPort::SerialPortError serialPortError)
 }
 
 
-
-void FullGameWindow::loadMsg(){
-    F_outgoing.cmd = cmdOutGF;
-    F_outgoing.wire = DUEWIRE;
-    F_outgoing.rounds = roundsOutGF;
-    for (int i = 0; i < 9; i++) F_outgoing.pins[i] = pinsOutGF[i];
-}
-
-
-
-
-int FullGameWindow::getNumberFromQString(const QString &xString)
-{
-    QRegExp xRegExp("(-?\\d+(?:[\\.,]\\d+(?:e\\d+)?)?)");
-    xRegExp.indexIn(xString);
-    QStringList xList = xRegExp.capturedTexts();
-    if (true == xList.empty())
-    {
-        return 0.0;
-    }
-    return xList.begin()->toInt();
-}
-
-void FullGameWindow::parseMsg(){
+void FullGameWindow::savePoints(){
 
     {
-        qDebug()<< "wire: " << F_incoming.wire << " cmd: " << F_incoming.cmd << endl;
 
-        cmdGF = F_incoming.cmd;
-
-        if (F_incoming.rounds != currentRound) {   // If there's a new round, check if it's full game of partial game
-            if (!isPartial) {                      // fullgame case
-                pointsGF = 0;
-                for (int i = 0; i < 9; i++) {
-                    pinsGF[i] = F_incoming.pins[i];
-                    if (pinsGF[i]) pointsGF++;
+        if (currentRound != state.rounds)
+        {
+            if (currentGameType == Game::FULLGAME)  //  FULL GAME, count points, change rounds
+            {
+                state.score += state.getPoints();
+                currentRound = state.rounds;
+            } else                                  // PARTIAL GAME, save last rounds' in lastPoints.
+            {
+                if (state.getPoints() == PINS)
+                {
+                    state.score = state.getPoints() - lastPoints;
+                    lastPoints = 0;
+                } else
+                {
+                state.score += state.getPoints() - lastPoints;
+                lastPoints = state.getPoints();
                 }
-                roundsGF = currentRound;
-                scoreGF += pointsGF;
-                currentRound = F_incoming.rounds;
-                roundsGF = currentRound;
+               currentRound = state.rounds;
             }
-
-            else {                                 // partial game case
-                pointsGF = 0;
-                for (int i = 0; i<9; i++) {
-                    pinsGF[i] = F_incoming.pins[i]; if (pinsGF[i]) pointsGF++;}
-                roundsGF = currentRound;
-
-                if (pointsGF == 9)
-                {scoreGF += pointsGF - lastPoints;  lastPoints = 0; //pointsGF = 0;
-                }
-                else {
-                    scoreGF += pointsGF - lastPoints;
-                    lastPoints  = pointsGF;
-                }
-                currentRound = F_incoming.rounds;
-                roundsGF = currentRound;
-
-            }
-
         }
-        else currentRound = F_incoming.rounds;
-
+        else currentRound = state.rounds;
     }
-
-
-    onRedrawGUI();
-
-
 }
 
 
 void FullGameWindow::sndMsg(){
 
-    F_outgoing.checksum = 0;
-    F_outgoing.checksum += F_outgoing.wire = DUEWIRE;
-    F_outgoing.checksum += F_outgoing.cmd = cmdOutGF;
-    for (int i = 0; i < 9; i++) F_outgoing.checksum += F_outgoing.pins[i] = pinsOutGF[i];
-    F_outgoing.checksum += F_outgoing.rounds = roundsOutGF;
-    F_outgoing.checksum += F_outgoing.score = scoreOutGF;
+
+    QByteArray serialMessage;
+    for (size_t i = 0; i < sizeof(state); i++)
+        serialMessage.append(char(state.bytes.at(i)));
+
+    serial->write(serialMessage);
+
+    while()
 
 
-    QByteArray wire,cmd,rounds,score,checksum;
-    QByteArray pin[9];
 
-    wire.append(F_outgoing.wire);
-    cmd.append(F_outgoing.cmd);
-    rounds.append(F_outgoing.rounds);
-    for (int i = 0; i<9; i++) pin[i].append(F_outgoing.pins[i]);
-    score.append(F_outgoing.score);
-    checksum.append(F_outgoing.checksum);
-
-
-    serial->write(wire);
-    serial->write(cmd);
-    for (int i = 0; i < 9; i++) serial->write(pin[i]);
-    serial->write(rounds);
-    serial->write(score);
-    serial->write(checksum);
 
 }
 
