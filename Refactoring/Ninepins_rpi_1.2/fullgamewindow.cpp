@@ -306,6 +306,7 @@ void FullGameWindow::savePoints(){
     }
 }
 
+//TODO: REMAKE THE COMMUNICATION INTO SEPARATE CLAAS
 
 void FullGameWindow::sndMsg(){
 
