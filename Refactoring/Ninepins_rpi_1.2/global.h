@@ -46,7 +46,12 @@ enum commands : int {
     CHANGECANCEL = 102,
     CHANGE = 200,
     SETTINGPINS = 3,
-    ENDGAME = 100
+    ENDGAME = 100,
+    GAFFECONFIRMED = 206,
+    GAFFECANCELED = 205,
+    CHECKSUMNOTMATCH = 6,
+    FULLGAMEMSG = 1
+
 };
 
 

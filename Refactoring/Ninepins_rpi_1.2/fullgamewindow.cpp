@@ -376,12 +376,12 @@ void FullGameWindow::parseMsg(){
         qDebug()<< "wire: " << F_incoming.wire << " cmd: " << F_incoming.cmd << endl;
 
         cmdGF = F_incoming.cmd;
-       
+
         if (F_incoming.rounds != currentRound) {   // If there's a new round, check if it's full game of partial game
             if (!isPartial) {                      // fullgame case
                 pointsGF = 0;
                 for (int i = 0; i < 9; i++) {
-                    pinsGF[i] = F_incoming.pins[i]; 
+                    pinsGF[i] = F_incoming.pins[i];
                     if (pinsGF[i]) pointsGF++;
                 }
                 roundsGF = currentRound;
