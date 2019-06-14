@@ -17,7 +17,7 @@ ButtonChecker::ButtonChecker(QObject *parent) :
 }
 
 void ButtonChecker::run(){
-    this->Stop = false;
+    this->stop = false;
     gpio21->export_gpio(); //export GPIO21
     gpio21->setdir_gpio("in"); // set pin to "read-mode"
     int timer = 0;

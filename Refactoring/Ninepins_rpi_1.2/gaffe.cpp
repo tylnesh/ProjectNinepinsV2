@@ -19,9 +19,11 @@ This program is free software: you can redistribute it and/or modify
 
 
 
-Gaffe::Gaffe(QWidget *parent) :
+Gaffe::Gaffe(QWidget *parent, Status *msg) :
     QDialog(parent),
+    msg(msg),
     ui(new Ui::gaffe)
+
 {
     ui->setupUi(this);
     this ->setWindowFlags(Qt::Window);
@@ -40,7 +42,7 @@ Gaffe::~Gaffe()
 
 void Gaffe::on_gaffeConfirmedButton_clicked()
 {
-    cmdOutGF = GAFFECONFIRMED;
+    msg->cmd = GAFFECONFIRMED;
     gaffeSwitch = false;
     gaffeConfirmed = true;
     gaffeRunning = false;
@@ -54,7 +56,7 @@ void Gaffe::on_gaffeConfirmedButton_clicked()
 
 void Gaffe::on_gaffeCancelledButton_clicked()
 {
-    cmdOutGF = GAFFECANCELED;
+    msg->cmd = GAFFECANCELED;
     gaffeSwitch = false;
     gaffeConfirmed = false;
     gaffeRunning = false;

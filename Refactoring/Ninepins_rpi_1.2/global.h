@@ -5,6 +5,9 @@
 #define DUEWIRE 1
 #define DISPLAYWIRE 3
 
+#include <stdint.h>
+#include <array>
+
 extern bool gaffeSwitch;
 extern bool gaffeConfirmed;
 extern bool gaffeRunning;
@@ -18,9 +21,9 @@ extern int currentRound;
 extern int lastPoints;
 
 extern int cmdGF;
-extern int cmdOutGF;
+//extern int cmdOutGF;
 
-extern int pointsGF;
+//extern int pointsGF;
 extern int pointsOutGF;
 extern int pointsTmp;
 
@@ -50,9 +53,34 @@ enum commands : int {
     GAFFECONFIRMED = 206,
     GAFFECANCELED = 205,
     CHECKSUMNOTMATCH = 6,
-    FULLGAMEMSG = 1
+    FULLGAMEMSG = 1,
+    CHECKGAFFE = 201
 
 };
+
+
+static constexpr size_t PINS = 9;
+
+static constexpr size_t statusLength = PINS + 7;
+union Status {
+    struct {
+        uint8_t wire;
+        uint8_t cmd;
+        std::array<uint8_t, PINS> pins;
+        uint8_t rounds;
+        uint16_t score;
+        uint16_t checksum;
+    };
+    uint8_t bytes[statusLength];
+    uint8_t getPoints()
+    {
+        uint8_t points = 0;
+        for (size_t i = 0; i < PINS; i++) if (pins[i]) points++;
+        return points;
+    }
+};
+
+
 
 
 

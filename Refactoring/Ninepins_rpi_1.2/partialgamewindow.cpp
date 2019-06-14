@@ -118,7 +118,7 @@ sndScore();
 
 PartialGameWindow::~PartialGameWindow()
 {
-    buttonThread->Stop = true;
+    buttonThread->stop = true;
     while(buttonThread->isRunning()) {};
     serial->close();
     delete ui;

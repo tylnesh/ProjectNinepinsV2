@@ -17,19 +17,20 @@ This program is free software: you can redistribute it and/or modify
 #include "ui_changerwindow.h"
 #include "global.h"
 
-ChangerWindow::ChangerWindow(QWidget *parent) :
+ChangerWindow::ChangerWindow(QWidget *parent, Status *msg) :
     QDialog(parent),
+    msg(msg),
     ui(new Ui::ChangerWindow)
 {
     ui->setupUi(this);
     this ->setWindowFlags(Qt::Window);
     this ->showFullScreen();
     ui->zeroButton->setVisible(false);
-    cmd = cmdGF;
-    points = pointsGF;
-    rounds = roundsGF;
-    score = scoreGF;
-    for (int i = 0; i < 9; i++) pins[i] = pinsGF[i];
+    cmd = msg->cmd;
+    points = msg->getPoints();
+    rounds = msg->rounds;
+    score = msg->score;
+    for (size_t i = 0; i < 9; i++) pins[i] = msg->pins[i];
     RedrawGUI();
 
 }
@@ -41,11 +42,10 @@ ChangerWindow::~ChangerWindow()
 
 void ChangerWindow::on_okButton_clicked()
 {
-    cmdGF = cmdOutGF = CHANGEOK;
-    pointsGF = pointsOutGF = points;
-    roundsGF = roundsOutGF = rounds;
-    scoreGF = scoreOutGF = score;
-    for (int i = 0; i < 9; i++) pinsGF[i] = pinsOutGF[i] = pins[i];
+    msg->cmd = CHANGEOK;
+    msg->rounds = uint8_t(rounds);
+    msg->score = uint16_t(score);
+    for (size_t i = 0; i < 9; i++) msg->pins[i]= uint8_t(pins[i]);
 
     changer = true;
     close();
@@ -53,7 +53,7 @@ void ChangerWindow::on_okButton_clicked()
 
 void ChangerWindow::on_cancelButton_clicked()
 {
-    cmdOutGF = CHANGECANCEL;
+    msg->cmd = CHANGECANCEL;
     changer = false;
     close();
 }
@@ -136,7 +136,7 @@ void ChangerWindow::RedrawGUI()
     ui->scoreLCD->display(score);
     ui->roundsLCD->display(rounds);
     ui->pointsLCD->display(points);
-
+{
     if (!pins[0]) ui->pin0->setIcon(QIcon(":/images/kolok1_big.png")); else ui->pin0->setIcon(QIcon(":/images/kolok2_big.png"));
     if (!pins[1]) ui->pin1->setIcon(QIcon(":/images/kolok1_big.png")); else ui->pin1->setIcon(QIcon(":/images/kolok2_big.png"));
     if (!pins[2]) ui->pin2->setIcon(QIcon(":/images/kolok1_big.png")); else ui->pin2->setIcon(QIcon(":/images/kolok2_big.png"));
@@ -146,7 +146,7 @@ void ChangerWindow::RedrawGUI()
     if (!pins[6]) ui->pin6->setIcon(QIcon(":/images/kolok1_big.png")); else ui->pin6->setIcon(QIcon(":/images/kolok2_big.png"));
     if (!pins[7]) ui->pin7->setIcon(QIcon(":/images/kolok1_big.png")); else ui->pin7->setIcon(QIcon(":/images/kolok2_big.png"));
     if (!pins[8]) ui->pin8->setIcon(QIcon(":/images/kolok1_big.png")); else ui->pin8->setIcon(QIcon(":/images/kolok2_big.png"));
-
+}
 
 }
 

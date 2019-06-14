@@ -15,7 +15,7 @@ class ButtonChecker: public QThread
 public:
     explicit ButtonChecker(QObject *parent=nullptr);
 
-    bool Stop;
+    bool stop;
     void run();
     bool running;
 

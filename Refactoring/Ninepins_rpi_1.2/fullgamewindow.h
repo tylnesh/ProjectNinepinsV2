@@ -29,7 +29,7 @@ public:
     GPIOClass* gpio21;
     std::string inputstate;
     QSerialPort *serial;
-    QByteArray  serial_readData;
+    QByteArray  serialReadData;
     QTextStream m_standardOutput;
     QTimer      serialTimer;
     QTimer      *redrawGuiTimer;
@@ -38,7 +38,6 @@ public:
     QString strCmd;
     QString strRnd;
     QString strPins[9];
-
 
     void loadMsg();
     int getNumberFromQString(const QString &xString);
@@ -77,6 +76,9 @@ private slots:
 
 private:
     Ui::FullGameWindow *ui;
+    Status message;
+
+
 
 public slots:
     void handleReadyRead();

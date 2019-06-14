@@ -2,6 +2,7 @@
 #define CHANGERWINDOW_H
 
 #include <QtWidgets/QDialog>
+#include "global.h"
 
 namespace Ui {
 class ChangerWindow;
@@ -12,7 +13,7 @@ class ChangerWindow : public QDialog
     Q_OBJECT
 
 public:
-    explicit ChangerWindow(QWidget *parent = 0);
+    explicit ChangerWindow(QWidget *parent = nullptr, Status *msg = nullptr);
     ~ChangerWindow();
 
     void RedrawGUI();
@@ -53,12 +54,14 @@ private slots:
     void on_zeroButton_clicked();
 
 private:
+    Status *msg;
     Ui::ChangerWindow *ui;
     int cmd = 0;
     int points = 0;
     int rounds = 0;
     int score = 0;
     bool pins[9] = {false, false, false, false, false, false, false, false, false};
+
 
     void switchPin(int i);
 
