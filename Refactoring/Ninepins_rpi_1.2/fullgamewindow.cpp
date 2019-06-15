@@ -66,29 +66,29 @@ FullGameWindow::FullGameWindow(QWidget *parent) :
     connect(buttonThread,SIGNAL(checkGaffe()),this,SLOT(onCheckGaffe()));
     buttonThread->start();
 
-    serial = new QSerialPort();
-    serial->setPortName("/dev/ttyUSB0");
-    if (serial->open(QIODevice::ReadWrite))
-    {
-        serial->setBaudRate(QSerialPort::Baud57600);
-        serial->setDataBits(QSerialPort::Data8);
-        serial->setParity(QSerialPort::NoParity);
-        serial->setStopBits(QSerialPort::OneStop);
-        serial->setFlowControl(QSerialPort::NoFlowControl);
+//    serial = new QSerialPort();
+//    serial->setPortName("/dev/ttyUSB0");
+//    if (serial->open(QIODevice::ReadWrite))
+//    {
+//        serial->setBaudRate(QSerialPort::Baud57600);
+//        serial->setDataBits(QSerialPort::Data8);
+//        serial->setParity(QSerialPort::NoParity);
+//        serial->setStopBits(QSerialPort::OneStop);
+//        serial->setFlowControl(QSerialPort::NoFlowControl);
 
-        connect(serial, &QSerialPort::readyRead, this, &FullGameWindow::handleReadyRead);
-        connect(serial, static_cast<void (QSerialPort::*)(QSerialPort::SerialPortError)>(&QSerialPort::error),
-                this, &FullGameWindow::handleError);
-        connect(&serialTimer, &QTimer::timeout, this, &FullGameWindow::handleTimeout);
+//        connect(serial, &QSerialPort::readyRead, this, &FullGameWindow::handleReadyRead);
+//        connect(serial, static_cast<void (QSerialPort::*)(QSerialPort::SerialPortError)>(&QSerialPort::error),
+//                this, &FullGameWindow::handleError);
+//        connect(&serialTimer, &QTimer::timeout, this, &FullGameWindow::handleTimeout);
 
-        serialTimer.start(SERIALTIMER);
+//        serialTimer.start(SERIALTIMER);
 
 
-    } else qDebug() << "RS485 error msg: " << serial->errorString();
+//    } else qDebug() << "RS485 error msg: " << serial->errorString();
 
     state.cmd = FULLGAME;
-    sndMsg();
-    sndScore();
+    emit sendMsg(&state);
+    //sndScore();
 
 }
 
@@ -132,12 +132,12 @@ void FullGameWindow::onCheckGaffe(){
         Gaffe gaffeWindow(this, &state);
         state.cmd = CHECKGAFFE;
 
-        sndMsg();
+        emit sendMsg(&state);
         gaffeRunning = true;
 
         gaffeWindow.exec();
         while (gaffeRunning){}
-        sndMsg();
+        emit sendMsg(&state);
     }
 
 }
@@ -145,54 +145,54 @@ void FullGameWindow::onCheckGaffe(){
 
 void FullGameWindow::on_pin0_clicked()
 {
-    sndScore();
+    //sndScore();
 }
 
 void FullGameWindow::on_pin1_clicked()
 {
-    sndScore();
+    //sndScore();
 }
 
 void FullGameWindow::on_pin2_clicked()
 {
-    sndScore();
+//    sndScore();
 }
 
 void FullGameWindow::on_pin3_clicked()
 {
-    sndScore();
+  //  sndScore();
 }
 
 void FullGameWindow::on_pin4_clicked()
 {
-    sndScore();
+    //sndScore();
 }
 
 void FullGameWindow::on_pin5_clicked()
 {
-    sndScore();
+    //sndScore();
 }
 
 void FullGameWindow::on_pin6_clicked()
 {
-    sndScore();
+ //   sndScore();
 }
 
 void FullGameWindow::on_pin7_clicked()
 {
-    sndScore();
+   // sndScore();
 }
 
 void FullGameWindow::on_pin8_clicked()
 {
-    sndScore();
+ //   sndScore();
 }
 
 
 void FullGameWindow::on_settingPinsButton_clicked()
 {
     state.cmd = SETTINGPINS;
-    sndMsg();
+    emit sendMsg(&state);
 
 
 }
@@ -200,28 +200,28 @@ void FullGameWindow::on_settingPinsButton_clicked()
 void FullGameWindow::on_changeStateButton_clicked()
 {
     state.cmd = CHANGE;
-    sndMsg();
+    emit sendMsg(&state);
     ChangerWindow ch(this, &state);
     ch.exec();
     while (ch.isVisible()) {}
 
     if (changer)
     {
-        sndMsg();
-        sndScore();
+        emit sendMsg(&state);
+        //sndScore();
         onRedrawGUI();
         on_settingPinsButton_clicked();
 
     }
     else {
-        sndMsg();
+        emit sendMsg(&state);
     }
 }
 
 void FullGameWindow::on_endGameButton_clicked()
 {
     state.cmd = ENDGAME;
-    sndMsg();
+    emit sendMsg(&state);
 
     //stopping the thread checking the Red Gaffe Button
     buttonThread->stop = true;
@@ -237,45 +237,6 @@ void FullGameWindow::on_endGameButton_clicked()
     close();
 }
 
-
-
-
-void FullGameWindow::handleReadyRead()
-{
-    serialReadData.append(serial->readAll());
-    if (!serialTimer.isActive())
-        serialTimer.start(SERIALTIMER);
-}
-
-
-void FullGameWindow::handleTimeout()
-{
-    if (serialReadData.isEmpty()) {
-    } else {
-
-        if (serialReadData.size() < statusLength)  return;
-        Status *received = reinterpret_cast<Status*>(serialReadData.data());
-
-        uint16_t tempChecksum = std::accumulate(received->bytes.begin(), received->bytes.end() - sizeof(Status::checksum), uint16_t(0));
-        if (received->checksum == tempChecksum) state = *received;
-
-
-        serialReadData = "";
-
-
-    }
-
-
-
-}
-
-void FullGameWindow::handleError(QSerialPort::SerialPortError serialPortError)
-{
-    if (serialPortError == QSerialPort::ReadError) {
-        //  qDebug() << QObject::tr("An I/O error occurred while reading the data from port %1, error: %2").arg(serial->portName()).arg(serial->errorString()) << endl;
-        //QCoreApplication::exit(1);
-    }
-}
 
 
 void FullGameWindow::savePoints(){
@@ -308,44 +269,28 @@ void FullGameWindow::savePoints(){
 
 //TODO: REMAKE THE COMMUNICATION INTO SEPARATE CLAAS
 
-void FullGameWindow::sndMsg(){
 
+//void FullGameWindow::sndScore(){
 
-    QByteArray serialMessage;
-    for (size_t i = 0; i < sizeof(state); i++)
-        serialMessage.append(char(state.bytes.at(i)));
+//    // not sure why there's this timer loop... maybe just a delay from sending the message
+//    QEventLoop loop;
+//    QTimer::singleShot(50, &loop, SLOT(quit()));
+//    loop.exec();
 
-    serial->write(serialMessage);
+//    QByteArray wire,rounds,points,score,checksum;
 
-    while()
+//    wire.append(DISPLAYWIRE);
+//    rounds.append(roundsGF);
+//    points.append(pointsGF);
+//    score.append(scoreGF);
+//    checksum.append(DISPLAYWIRE+roundsGF+pointsGF+scoreGF);
 
+//    serial->write(wire);
+//    serial->write(rounds);
+//    serial->write(points);
+//    serial->write(score);
+//    serial->write(checksum);
 
-
-
-}
-
-
-void FullGameWindow::sndScore(){
-
-    // not sure why there's this timer loop... maybe just a delay from sending the message
-    QEventLoop loop;
-    QTimer::singleShot(50, &loop, SLOT(quit()));
-    loop.exec();
-
-    QByteArray wire,rounds,points,score,checksum;
-
-    wire.append(DISPLAYWIRE);
-    rounds.append(roundsGF);
-    points.append(pointsGF);
-    score.append(scoreGF);
-    checksum.append(DISPLAYWIRE+roundsGF+pointsGF+scoreGF);
-
-    serial->write(wire);
-    serial->write(rounds);
-    serial->write(points);
-    serial->write(score);
-    serial->write(checksum);
-
-}
+//}
 
 

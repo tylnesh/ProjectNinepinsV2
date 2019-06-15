@@ -42,7 +42,7 @@ extern bool pinsTmp[9];
 
 extern bool isPartial;
 
-enum commands : int {
+enum commands : uint8_t {
     FULLGAME = 24,
     PARTIALGAME = 25,
     CHANGEOK = 101,
@@ -54,7 +54,9 @@ enum commands : int {
     GAFFECANCELED = 205,
     CHECKSUMNOTMATCH = 6,
     FULLGAMEMSG = 1,
-    CHECKGAFFE = 201
+    CHECKGAFFE = 201,
+    ACKNOWLEDGED = 203,
+    REQREPEAT = 204
 
 };
 

@@ -42,8 +42,11 @@ public:
     void loadMsg();
     int getNumberFromQString(const QString &xString);
     void savePoints();
-    void sndMsg();
-    void sndScore();
+
+    //void sndScore();
+
+signals:
+    void sendMsg(Status *msg);
 
 
 
@@ -81,9 +84,7 @@ private:
 
 
 public slots:
-    void handleReadyRead();
-    void handleTimeout();
-    void handleError(QSerialPort::SerialPortError error);
+
     void onRedrawGUI();
     void onCheckGaffe();
 

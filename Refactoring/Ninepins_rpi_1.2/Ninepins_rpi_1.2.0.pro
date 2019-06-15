@@ -26,7 +26,8 @@ SOURCES += main.cpp\
     delay.cpp \
     buttonchecker.cpp \
     isgreen.cpp \
-    gaffe.cpp
+    gaffe.cpp \
+    serialcomm.cpp
 
 HEADERS  += mainwindow.h \
     chooserwindow.h \
@@ -38,7 +39,8 @@ HEADERS  += mainwindow.h \
     delay.h \
     buttonchecker.h \
     isgreen.h \
-    gaffe.h
+    gaffe.h \
+    serialcomm.h
 
 FORMS    += mainwindow.ui \
     chooserwindow.ui \

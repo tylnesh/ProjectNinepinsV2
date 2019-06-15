@@ -13,7 +13,7 @@
   <property name="windowTitle">
    <string>Dialog</string>
   </property>
-  <widget class="QPushButton" name="pin2">
+  <widget class="QPushButton" name="pin1">
    <property name="geometry">
     <rect>
      <x>610</x>
@@ -60,7 +60,7 @@
     <bool>true</bool>
    </property>
   </widget>
-  <widget class="QPushButton" name="pin9">
+  <widget class="QPushButton" name="pin8">
    <property name="geometry">
     <rect>
      <x>710</x>
@@ -87,7 +87,7 @@
     <bool>true</bool>
    </property>
   </widget>
-  <widget class="QPushButton" name="pin8">
+  <widget class="QPushButton" name="pin7">
    <property name="geometry">
     <rect>
      <x>800</x>
@@ -114,7 +114,7 @@
     <bool>true</bool>
    </property>
   </widget>
-  <widget class="QPushButton" name="pin5">
+  <widget class="QPushButton" name="pin4">
    <property name="geometry">
     <rect>
      <x>710</x>
@@ -141,7 +141,7 @@
     <bool>true</bool>
    </property>
   </widget>
-  <widget class="QPushButton" name="pin4">
+  <widget class="QPushButton" name="pin3">
    <property name="geometry">
     <rect>
      <x>500</x>
@@ -193,7 +193,7 @@
     <string>Súčet  kolkov</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="pin6">
+  <widget class="QPushButton" name="pin5">
    <property name="geometry">
     <rect>
      <x>910</x>
@@ -220,7 +220,7 @@
     <bool>true</bool>
    </property>
   </widget>
-  <widget class="QPushButton" name="pin1">
+  <widget class="QPushButton" name="pin0">
    <property name="geometry">
     <rect>
      <x>710</x>
@@ -247,7 +247,7 @@
     <bool>true</bool>
    </property>
   </widget>
-  <widget class="QPushButton" name="pin7">
+  <widget class="QPushButton" name="pin6">
    <property name="geometry">
     <rect>
      <x>610</x>
@@ -319,7 +319,7 @@
     </rect>
    </property>
   </widget>
-  <widget class="QPushButton" name="pin3">
+  <widget class="QPushButton" name="pin2">
    <property name="geometry">
     <rect>
      <x>800</x>
@@ -356,7 +356,7 @@
     </rect>
    </property>
   </widget>
-  <widget class="QPushButton" name="stavButton">
+  <widget class="QPushButton" name="changeStateButton">
    <property name="geometry">
     <rect>
      <x>30</x>
@@ -377,7 +377,7 @@
     <string>Upraviť stav</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="stavanieButton">
+  <widget class="QPushButton" name="settingPinsButton">
    <property name="geometry">
     <rect>
      <x>30</x>
@@ -399,7 +399,7 @@
     <bool>true</bool>
    </property>
   </widget>
-  <widget class="QPushButton" name="koniecButton">
+  <widget class="QPushButton" name="endGameButton">
    <property name="geometry">
     <rect>
      <x>30</x>

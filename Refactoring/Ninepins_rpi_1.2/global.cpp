@@ -22,7 +22,7 @@ bool gaffeRunning = false;
 bool changerRunning=false;
 
 int currentRound = 0;
-int lastPoints = 0;
+uint8_t lastPoints = 0;
 
 int cmdGF = 0;
 int pointsGF=0;

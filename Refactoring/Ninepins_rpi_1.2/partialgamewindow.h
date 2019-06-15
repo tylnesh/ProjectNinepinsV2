@@ -13,6 +13,7 @@
 #include "buttonchecker.h"
 #include <QTimer>
 
+
 namespace Ui {
 class PartialGameWindow;
 }
@@ -24,27 +25,32 @@ class PartialGameWindow : public QDialog
 public:
     explicit PartialGameWindow(QWidget *parent = 0);
     ~PartialGameWindow();
-    //CommThread *commThread;
     ButtonChecker *buttonThread;
-
     GPIOClass* gpio21;
-     std::string inputstate;
+    std::string inputstate;
     QSerialPort *serial;
-    QByteArray  m_readData;
+    QByteArray  serialReadData;
     QTextStream m_standardOutput;
-    QTimer      m_timer;
+    QTimer      serialTimer;
+    QTimer      *redrawGuiTimer;
     QString serialBuffer;
     QString strWire;
     QString strCmd;
     QString strRnd;
     QString strPins[9];
 
-
     void loadMsg();
     int getNumberFromQString(const QString &xString);
-    void parseMsg();
-    void sndMsg();
-    void sndScore();
+    void savePoints();
+
+    //void sndScore();
+
+signals:
+    void sendMsg(Status *msg);
+
+
+
+
 private slots:
 
     void on_pin1_clicked();
@@ -63,22 +69,25 @@ private slots:
 
     void on_pin8_clicked();
 
-    void on_pin9_clicked();
+    void on_pin0_clicked();
 
-    void on_stavButton_clicked();
+    void on_changeStateButton_clicked();
 
-    void on_stavanieButton_clicked();
+    void on_settingPinsButton_clicked();
 
-    void on_koniecButton_clicked();
+    void on_endGameButton_clicked();
 
 private:
     Ui::PartialGameWindow *ui;
+    Status state;
+
+
 
 public slots:
-    void handleReadyRead();
-    void handleTimeout();
-    void handleError(QSerialPort::SerialPortError error);
+
     void onRedrawGUI();
+    void onCheckGaffe();
+
 
 };
 

@@ -27,7 +27,7 @@ void ButtonChecker::run(){
 
     while (running)
     {
-        if(this->Stop)  break;
+        if(this->stop)  break;
         gpio21->getval_gpio(inputstate);
         if(inputstate == "0") // if input pin is at state "0" i.e. button pressed
                 {

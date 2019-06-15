@@ -63,7 +63,8 @@ SOURCES       = ../Ninepins_rpi_1.2/main.cpp \
 		../Ninepins_rpi_1.2/delay.cpp \
 		../Ninepins_rpi_1.2/buttonchecker.cpp \
 		../Ninepins_rpi_1.2/isgreen.cpp \
-		../Ninepins_rpi_1.2/gaffe.cpp qrc_ninepins.cpp \
+		../Ninepins_rpi_1.2/gaffe.cpp \
+		../Ninepins_rpi_1.2/serialcomm.cpp qrc_ninepins.cpp \
 		moc_mainwindow.cpp \
 		moc_chooserwindow.cpp \
 		moc_fullgamewindow.cpp \
@@ -72,7 +73,8 @@ SOURCES       = ../Ninepins_rpi_1.2/main.cpp \
 		moc_delay.cpp \
 		moc_buttonchecker.cpp \
 		moc_isgreen.cpp \
-		moc_gaffe.cpp
+		moc_gaffe.cpp \
+		moc_serialcomm.cpp
 OBJECTS       = main.o \
 		mainwindow.o \
 		chooserwindow.o \
@@ -85,6 +87,7 @@ OBJECTS       = main.o \
 		buttonchecker.o \
 		isgreen.o \
 		gaffe.o \
+		serialcomm.o \
 		qrc_ninepins.o \
 		moc_mainwindow.o \
 		moc_chooserwindow.o \
@@ -94,7 +97,8 @@ OBJECTS       = main.o \
 		moc_delay.o \
 		moc_buttonchecker.o \
 		moc_isgreen.o \
-		moc_gaffe.o
+		moc_gaffe.o \
+		moc_serialcomm.o
 DIST          = /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/spec_pre.prf \
 		/usr/lib/x86_64-linux-gnu/qt5/mkspecs/common/unix.conf \
 		/usr/lib/x86_64-linux-gnu/qt5/mkspecs/common/linux.conf \
@@ -153,6 +157,7 @@ DIST          = /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/spec_pre.prf \
 		/usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/qt_config.prf \
 		/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++/qmake.conf \
 		/usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/spec_post.prf \
+		../Ninepins_rpi_1.2/.qmake.stash \
 		/usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/exclusive_builds.prf \
 		/usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/toolchain.prf \
 		/usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/default_pre.prf \
@@ -182,7 +187,8 @@ DIST          = /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/spec_pre.prf \
 		../Ninepins_rpi_1.2/delay.h \
 		../Ninepins_rpi_1.2/buttonchecker.h \
 		../Ninepins_rpi_1.2/isgreen.h \
-		../Ninepins_rpi_1.2/gaffe.h ../Ninepins_rpi_1.2/main.cpp \
+		../Ninepins_rpi_1.2/gaffe.h \
+		../Ninepins_rpi_1.2/serialcomm.h ../Ninepins_rpi_1.2/main.cpp \
 		../Ninepins_rpi_1.2/mainwindow.cpp \
 		../Ninepins_rpi_1.2/chooserwindow.cpp \
 		../Ninepins_rpi_1.2/fullgamewindow.cpp \
@@ -193,7 +199,8 @@ DIST          = /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/spec_pre.prf \
 		../Ninepins_rpi_1.2/delay.cpp \
 		../Ninepins_rpi_1.2/buttonchecker.cpp \
 		../Ninepins_rpi_1.2/isgreen.cpp \
-		../Ninepins_rpi_1.2/gaffe.cpp
+		../Ninepins_rpi_1.2/gaffe.cpp \
+		../Ninepins_rpi_1.2/serialcomm.cpp
 QMAKE_TARGET  = Ninepins_rpi_1.2.0
 DESTDIR       = 
 TARGET        = Ninepins_rpi_1.2.0
@@ -263,6 +270,7 @@ Makefile: ../Ninepins_rpi_1.2/Ninepins_rpi_1.2.0.pro /usr/lib/x86_64-linux-gnu/q
 		/usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/qt_config.prf \
 		/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++/qmake.conf \
 		/usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/spec_post.prf \
+		.qmake.stash \
 		/usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/exclusive_builds.prf \
 		/usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/toolchain.prf \
 		/usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/default_pre.prf \
@@ -348,6 +356,7 @@ Makefile: ../Ninepins_rpi_1.2/Ninepins_rpi_1.2.0.pro /usr/lib/x86_64-linux-gnu/q
 /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/qt_config.prf:
 /usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++/qmake.conf:
 /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/spec_post.prf:
+.qmake.stash:
 /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/exclusive_builds.prf:
 /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/toolchain.prf:
 /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/default_pre.prf:
@@ -390,8 +399,8 @@ distdir: FORCE
 	$(COPY_FILE) --parents $(DIST) $(DISTDIR)/
 	$(COPY_FILE) --parents ../Ninepins_rpi_1.2/ninepins.qrc $(DISTDIR)/
 	$(COPY_FILE) --parents /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/data/dummy.cpp $(DISTDIR)/
-	$(COPY_FILE) --parents ../Ninepins_rpi_1.2/mainwindow.h ../Ninepins_rpi_1.2/chooserwindow.h ../Ninepins_rpi_1.2/fullgamewindow.h ../Ninepins_rpi_1.2/global.h ../Ninepins_rpi_1.2/partialgamewindow.h ../Ninepins_rpi_1.2/gpioclass.h ../Ninepins_rpi_1.2/changerwindow.h ../Ninepins_rpi_1.2/delay.h ../Ninepins_rpi_1.2/buttonchecker.h ../Ninepins_rpi_1.2/isgreen.h ../Ninepins_rpi_1.2/gaffe.h $(DISTDIR)/
-	$(COPY_FILE) --parents ../Ninepins_rpi_1.2/main.cpp ../Ninepins_rpi_1.2/mainwindow.cpp ../Ninepins_rpi_1.2/chooserwindow.cpp ../Ninepins_rpi_1.2/fullgamewindow.cpp ../Ninepins_rpi_1.2/global.cpp ../Ninepins_rpi_1.2/partialgamewindow.cpp ../Ninepins_rpi_1.2/gpioclass.cpp ../Ninepins_rpi_1.2/changerwindow.cpp ../Ninepins_rpi_1.2/delay.cpp ../Ninepins_rpi_1.2/buttonchecker.cpp ../Ninepins_rpi_1.2/isgreen.cpp ../Ninepins_rpi_1.2/gaffe.cpp $(DISTDIR)/
+	$(COPY_FILE) --parents ../Ninepins_rpi_1.2/mainwindow.h ../Ninepins_rpi_1.2/chooserwindow.h ../Ninepins_rpi_1.2/fullgamewindow.h ../Ninepins_rpi_1.2/global.h ../Ninepins_rpi_1.2/partialgamewindow.h ../Ninepins_rpi_1.2/gpioclass.h ../Ninepins_rpi_1.2/changerwindow.h ../Ninepins_rpi_1.2/delay.h ../Ninepins_rpi_1.2/buttonchecker.h ../Ninepins_rpi_1.2/isgreen.h ../Ninepins_rpi_1.2/gaffe.h ../Ninepins_rpi_1.2/serialcomm.h $(DISTDIR)/
+	$(COPY_FILE) --parents ../Ninepins_rpi_1.2/main.cpp ../Ninepins_rpi_1.2/mainwindow.cpp ../Ninepins_rpi_1.2/chooserwindow.cpp ../Ninepins_rpi_1.2/fullgamewindow.cpp ../Ninepins_rpi_1.2/global.cpp ../Ninepins_rpi_1.2/partialgamewindow.cpp ../Ninepins_rpi_1.2/gpioclass.cpp ../Ninepins_rpi_1.2/changerwindow.cpp ../Ninepins_rpi_1.2/delay.cpp ../Ninepins_rpi_1.2/buttonchecker.cpp ../Ninepins_rpi_1.2/isgreen.cpp ../Ninepins_rpi_1.2/gaffe.cpp ../Ninepins_rpi_1.2/serialcomm.cpp $(DISTDIR)/
 	$(COPY_FILE) --parents ../Ninepins_rpi_1.2/mainwindow.ui ../Ninepins_rpi_1.2/chooserwindow.ui ../Ninepins_rpi_1.2/fullgamewindow.ui ../Ninepins_rpi_1.2/partialgamewindow.ui ../Ninepins_rpi_1.2/changerwindow.ui ../Ninepins_rpi_1.2/delay.ui ../Ninepins_rpi_1.2/isgreen.ui ../Ninepins_rpi_1.2/gaffe.ui $(DISTDIR)/
 
 
@@ -440,9 +449,9 @@ compiler_moc_predefs_clean:
 moc_predefs.h: /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/data/dummy.cpp
 	g++ -pipe -std=c++11 -g -std=gnu++11 -Wall -W -dM -E -o moc_predefs.h /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/data/dummy.cpp
 
-compiler_moc_header_make_all: moc_mainwindow.cpp moc_chooserwindow.cpp moc_fullgamewindow.cpp moc_partialgamewindow.cpp moc_changerwindow.cpp moc_delay.cpp moc_buttonchecker.cpp moc_isgreen.cpp moc_gaffe.cpp
+compiler_moc_header_make_all: moc_mainwindow.cpp moc_chooserwindow.cpp moc_fullgamewindow.cpp moc_partialgamewindow.cpp moc_changerwindow.cpp moc_delay.cpp moc_buttonchecker.cpp moc_isgreen.cpp moc_gaffe.cpp moc_serialcomm.cpp
 compiler_moc_header_clean:
-	-$(DEL_FILE) moc_mainwindow.cpp moc_chooserwindow.cpp moc_fullgamewindow.cpp moc_partialgamewindow.cpp moc_changerwindow.cpp moc_delay.cpp moc_buttonchecker.cpp moc_isgreen.cpp moc_gaffe.cpp
+	-$(DEL_FILE) moc_mainwindow.cpp moc_chooserwindow.cpp moc_fullgamewindow.cpp moc_partialgamewindow.cpp moc_changerwindow.cpp moc_delay.cpp moc_buttonchecker.cpp moc_isgreen.cpp moc_gaffe.cpp moc_serialcomm.cpp
 moc_mainwindow.cpp: ../Ninepins_rpi_1.2/mainwindow.h \
 		moc_predefs.h \
 		/usr/lib/qt5/bin/moc
@@ -474,6 +483,7 @@ moc_partialgamewindow.cpp: ../Ninepins_rpi_1.2/partialgamewindow.h \
 	/usr/lib/qt5/bin/moc $(DEFINES) --include /home/tylnesh/ProjectNinepins/ProjectNinepinsV2/Refactoring/build-Ninepins_rpi_1.2.0-Desktop-Debug/moc_predefs.h -I/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++ -I/home/tylnesh/ProjectNinepins/ProjectNinepinsV2/Refactoring/Ninepins_rpi_1.2 -I/usr/include/x86_64-linux-gnu/qt5 -I/usr/include/x86_64-linux-gnu/qt5/QtWidgets -I/usr/include/x86_64-linux-gnu/qt5/QtGui -I/usr/include/x86_64-linux-gnu/qt5/QtSerialPort -I/usr/include/x86_64-linux-gnu/qt5/QtConcurrent -I/usr/include/x86_64-linux-gnu/qt5/QtCore -I. -I/usr/include/c++/8 -I/usr/include/x86_64-linux-gnu/c++/8 -I/usr/include/c++/8/backward -I/usr/lib/gcc/x86_64-linux-gnu/8/include -I/usr/local/include -I/usr/lib/gcc/x86_64-linux-gnu/8/include-fixed -I/usr/include/x86_64-linux-gnu -I/usr/include ../Ninepins_rpi_1.2/partialgamewindow.h -o moc_partialgamewindow.cpp
 
 moc_changerwindow.cpp: ../Ninepins_rpi_1.2/changerwindow.h \
+		../Ninepins_rpi_1.2/global.h \
 		moc_predefs.h \
 		/usr/lib/qt5/bin/moc
 	/usr/lib/qt5/bin/moc $(DEFINES) --include /home/tylnesh/ProjectNinepins/ProjectNinepinsV2/Refactoring/build-Ninepins_rpi_1.2.0-Desktop-Debug/moc_predefs.h -I/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++ -I/home/tylnesh/ProjectNinepins/ProjectNinepinsV2/Refactoring/Ninepins_rpi_1.2 -I/usr/include/x86_64-linux-gnu/qt5 -I/usr/include/x86_64-linux-gnu/qt5/QtWidgets -I/usr/include/x86_64-linux-gnu/qt5/QtGui -I/usr/include/x86_64-linux-gnu/qt5/QtSerialPort -I/usr/include/x86_64-linux-gnu/qt5/QtConcurrent -I/usr/include/x86_64-linux-gnu/qt5/QtCore -I. -I/usr/include/c++/8 -I/usr/include/x86_64-linux-gnu/c++/8 -I/usr/include/c++/8/backward -I/usr/lib/gcc/x86_64-linux-gnu/8/include -I/usr/local/include -I/usr/lib/gcc/x86_64-linux-gnu/8/include-fixed -I/usr/include/x86_64-linux-gnu -I/usr/include ../Ninepins_rpi_1.2/changerwindow.h -o moc_changerwindow.cpp
@@ -496,9 +506,16 @@ moc_isgreen.cpp: ../Ninepins_rpi_1.2/isgreen.h \
 	/usr/lib/qt5/bin/moc $(DEFINES) --include /home/tylnesh/ProjectNinepins/ProjectNinepinsV2/Refactoring/build-Ninepins_rpi_1.2.0-Desktop-Debug/moc_predefs.h -I/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++ -I/home/tylnesh/ProjectNinepins/ProjectNinepinsV2/Refactoring/Ninepins_rpi_1.2 -I/usr/include/x86_64-linux-gnu/qt5 -I/usr/include/x86_64-linux-gnu/qt5/QtWidgets -I/usr/include/x86_64-linux-gnu/qt5/QtGui -I/usr/include/x86_64-linux-gnu/qt5/QtSerialPort -I/usr/include/x86_64-linux-gnu/qt5/QtConcurrent -I/usr/include/x86_64-linux-gnu/qt5/QtCore -I. -I/usr/include/c++/8 -I/usr/include/x86_64-linux-gnu/c++/8 -I/usr/include/c++/8/backward -I/usr/lib/gcc/x86_64-linux-gnu/8/include -I/usr/local/include -I/usr/lib/gcc/x86_64-linux-gnu/8/include-fixed -I/usr/include/x86_64-linux-gnu -I/usr/include ../Ninepins_rpi_1.2/isgreen.h -o moc_isgreen.cpp
 
 moc_gaffe.cpp: ../Ninepins_rpi_1.2/gaffe.h \
+		../Ninepins_rpi_1.2/global.h \
 		moc_predefs.h \
 		/usr/lib/qt5/bin/moc
 	/usr/lib/qt5/bin/moc $(DEFINES) --include /home/tylnesh/ProjectNinepins/ProjectNinepinsV2/Refactoring/build-Ninepins_rpi_1.2.0-Desktop-Debug/moc_predefs.h -I/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++ -I/home/tylnesh/ProjectNinepins/ProjectNinepinsV2/Refactoring/Ninepins_rpi_1.2 -I/usr/include/x86_64-linux-gnu/qt5 -I/usr/include/x86_64-linux-gnu/qt5/QtWidgets -I/usr/include/x86_64-linux-gnu/qt5/QtGui -I/usr/include/x86_64-linux-gnu/qt5/QtSerialPort -I/usr/include/x86_64-linux-gnu/qt5/QtConcurrent -I/usr/include/x86_64-linux-gnu/qt5/QtCore -I. -I/usr/include/c++/8 -I/usr/include/x86_64-linux-gnu/c++/8 -I/usr/include/c++/8/backward -I/usr/lib/gcc/x86_64-linux-gnu/8/include -I/usr/local/include -I/usr/lib/gcc/x86_64-linux-gnu/8/include-fixed -I/usr/include/x86_64-linux-gnu -I/usr/include ../Ninepins_rpi_1.2/gaffe.h -o moc_gaffe.cpp
+
+moc_serialcomm.cpp: ../Ninepins_rpi_1.2/serialcomm.h \
+		../Ninepins_rpi_1.2/global.h \
+		moc_predefs.h \
+		/usr/lib/qt5/bin/moc
+	/usr/lib/qt5/bin/moc $(DEFINES) --include /home/tylnesh/ProjectNinepins/ProjectNinepinsV2/Refactoring/build-Ninepins_rpi_1.2.0-Desktop-Debug/moc_predefs.h -I/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++ -I/home/tylnesh/ProjectNinepins/ProjectNinepinsV2/Refactoring/Ninepins_rpi_1.2 -I/usr/include/x86_64-linux-gnu/qt5 -I/usr/include/x86_64-linux-gnu/qt5/QtWidgets -I/usr/include/x86_64-linux-gnu/qt5/QtGui -I/usr/include/x86_64-linux-gnu/qt5/QtSerialPort -I/usr/include/x86_64-linux-gnu/qt5/QtConcurrent -I/usr/include/x86_64-linux-gnu/qt5/QtCore -I. -I/usr/include/c++/8 -I/usr/include/x86_64-linux-gnu/c++/8 -I/usr/include/c++/8/backward -I/usr/lib/gcc/x86_64-linux-gnu/8/include -I/usr/local/include -I/usr/lib/gcc/x86_64-linux-gnu/8/include-fixed -I/usr/include/x86_64-linux-gnu -I/usr/include ../Ninepins_rpi_1.2/serialcomm.h -o moc_serialcomm.cpp
 
 compiler_moc_objc_header_make_all:
 compiler_moc_objc_header_clean:
@@ -601,8 +618,8 @@ gpioclass.o: ../Ninepins_rpi_1.2/gpioclass.cpp ../Ninepins_rpi_1.2/gpioclass.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o gpioclass.o ../Ninepins_rpi_1.2/gpioclass.cpp
 
 changerwindow.o: ../Ninepins_rpi_1.2/changerwindow.cpp ../Ninepins_rpi_1.2/changerwindow.h \
-		ui_changerwindow.h \
-		../Ninepins_rpi_1.2/global.h
+		../Ninepins_rpi_1.2/global.h \
+		ui_changerwindow.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o changerwindow.o ../Ninepins_rpi_1.2/changerwindow.cpp
 
 delay.o: ../Ninepins_rpi_1.2/delay.cpp ../Ninepins_rpi_1.2/delay.h \
@@ -620,10 +637,14 @@ isgreen.o: ../Ninepins_rpi_1.2/isgreen.cpp ../Ninepins_rpi_1.2/isgreen.h \
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o isgreen.o ../Ninepins_rpi_1.2/isgreen.cpp
 
 gaffe.o: ../Ninepins_rpi_1.2/gaffe.cpp ../Ninepins_rpi_1.2/gaffe.h \
-		ui_gaffe.h \
 		../Ninepins_rpi_1.2/global.h \
+		ui_gaffe.h \
 		../Ninepins_rpi_1.2/comm.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o gaffe.o ../Ninepins_rpi_1.2/gaffe.cpp
+
+serialcomm.o: ../Ninepins_rpi_1.2/serialcomm.cpp ../Ninepins_rpi_1.2/serialcomm.h \
+		../Ninepins_rpi_1.2/global.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o serialcomm.o ../Ninepins_rpi_1.2/serialcomm.cpp
 
 qrc_ninepins.o: qrc_ninepins.cpp 
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o qrc_ninepins.o qrc_ninepins.cpp
@@ -654,6 +675,9 @@ moc_isgreen.o: moc_isgreen.cpp
 
 moc_gaffe.o: moc_gaffe.cpp 
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o moc_gaffe.o moc_gaffe.cpp
+
+moc_serialcomm.o: moc_serialcomm.cpp 
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o moc_serialcomm.o moc_serialcomm.cpp
 
 ####### Install
 
