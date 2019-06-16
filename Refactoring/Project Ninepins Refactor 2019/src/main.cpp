@@ -864,7 +864,7 @@ void startGame()
 
 void setup() {
 
-  DEBUG.begin(57600);
+  DEBUG.begin(9600);
   COMM.begin(57600);
 
   startReceiving();

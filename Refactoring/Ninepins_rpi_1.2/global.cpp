@@ -44,6 +44,8 @@ bool changer = false;
 
 bool isPartial = 0;
 
+Game currentGameType = Game::FULLGAME;
+
 
 
 

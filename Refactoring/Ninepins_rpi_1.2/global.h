@@ -91,7 +91,7 @@ union Status {
 
 enum class Game: uint8_t {FULLGAME = 1, PARTIALGAME = 2};
 
-Game currentGameType;
+extern Game currentGameType;
 
 
 

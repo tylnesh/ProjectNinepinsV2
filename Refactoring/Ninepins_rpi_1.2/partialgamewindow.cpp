@@ -49,7 +49,7 @@ PartialGameWindow::PartialGameWindow(QWidget *parent) :
     isPartial = false;
     scoreGF = 0;
     roundsGF = 0;
-    currentGameType = Game::FULLGAME;
+    currentGameType = Game::PARTIALGAME;
 
     ui->setupUi(this);
     this ->setWindowFlags(Qt::Window);

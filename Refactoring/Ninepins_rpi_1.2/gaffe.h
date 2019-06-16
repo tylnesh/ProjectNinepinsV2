@@ -26,7 +26,7 @@ private slots:
     void on_gaffeCancelledButton_clicked();
 
 private:
-    Ui::gaffe *ui;
     Status *msg;
+    Ui::gaffe *ui;
 };
 #endif

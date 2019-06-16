@@ -36,6 +36,7 @@ This program is free software: you can redistribute it and/or modify
 #include <qtconcurrentrun.h>
 #include <QThread>
 #include <ctime>
+#include "serialcomm.h"
 
 
 
@@ -64,27 +65,10 @@ FullGameWindow::FullGameWindow(QWidget *parent) :
     //Thread checking if the Big Red Gaffe Button is pressed
     buttonThread = new ButtonChecker(this);
     connect(buttonThread,SIGNAL(checkGaffe()),this,SLOT(onCheckGaffe()));
-    buttonThread->start();
-
-//    serial = new QSerialPort();
-//    serial->setPortName("/dev/ttyUSB0");
-//    if (serial->open(QIODevice::ReadWrite))
-//    {
-//        serial->setBaudRate(QSerialPort::Baud57600);
-//        serial->setDataBits(QSerialPort::Data8);
-//        serial->setParity(QSerialPort::NoParity);
-//        serial->setStopBits(QSerialPort::OneStop);
-//        serial->setFlowControl(QSerialPort::NoFlowControl);
-
-//        connect(serial, &QSerialPort::readyRead, this, &FullGameWindow::handleReadyRead);
-//        connect(serial, static_cast<void (QSerialPort::*)(QSerialPort::SerialPortError)>(&QSerialPort::error),
-//                this, &FullGameWindow::handleError);
-//        connect(&serialTimer, &QTimer::timeout, this, &FullGameWindow::handleTimeout);
-
-//        serialTimer.start(SERIALTIMER);
 
 
-//    } else qDebug() << "RS485 error msg: " << serial->errorString();
+    SerialComm *comm = new SerialComm(this, "/dev/ttyUSB0", &state);
+    connect(this,SIGNAL(sendMsg(Status *)),comm,SLOT(onSendMsg(Status *)));
 
     state.cmd = FULLGAME;
     emit sendMsg(&state);

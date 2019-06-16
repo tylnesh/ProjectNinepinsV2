@@ -1,4 +1,5 @@
 #include "serialcomm.h"
+#include <QDebug>
 
 SerialComm::SerialComm(QObject *parent, QString path, Status *msg) : QObject(parent), path(path), msg(msg)
 {
@@ -23,7 +24,7 @@ SerialComm::SerialComm(QObject *parent, QString path, Status *msg) : QObject(par
 
     } else qDebug() << "RS485 error msg: " << serial->errorString();
 
-    connect(parent, SIGNAL(sendMsg(*msg)), this, SLOT(onSendMsg(*msg)));
+    //connect(parent, SIGNAL(sendMsg(&msg)), this, SLOT(onSendMsg(*msg)));
 
 
 }
@@ -81,16 +82,17 @@ void SerialComm::handleError(QSerialPort::SerialPortError serialPortError)
 
 void SerialComm::onSendMsg(Status *msg)
 {
+    qDebug() << "Sending msg...";
     QByteArray serialMessage;
     for (size_t i = 0; i < sizeof(msg); i++)
         serialMessage.append(char(msg->bytes.at(i)));
 
     serial->write(serialMessage);
-    waitingForAck = true;
-    requestedRepeat = false;
-    while(waitingForAck)
-    {
-    if (requestedRepeat) onSendMsg(msg);
-    }
+//    waitingForAck = true;
+//    requestedRepeat = false;
+//    while(waitingForAck)
+//    {
+//    if (requestedRepeat) onSendMsg(msg);
+//    }
 
 }
