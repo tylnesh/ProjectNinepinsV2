@@ -11,7 +11,7 @@ Delay::Delay(QWidget *parent) :
     this ->setWindowFlags(Qt::Window);
     this ->showFullScreen();
     ;
-    if (currentGameType == Game::PARTIALGAME)
+    if (currentGameType == Game::PARTIAL_GAME)
         QTimer::singleShot(13000,this,SLOT(onQuit())); // if the current game mode is "Partial Game", show the delay window for 13 seconds
     else QTimer::singleShot(2000,this,SLOT(onQuit()));  // otherwise just 2 seconds
 

@@ -43,7 +43,7 @@ ChangerWindow::~ChangerWindow()
 
 void ChangerWindow::on_okButton_clicked()
 {
-    msg->cmd = CHANGEOK;
+    msg->cmd = CHANGE_OK;
     msg->rounds = uint8_t(rounds);
     msg->score = uint16_t(score);
     for (size_t i = 0; i < 9; i++)
@@ -55,7 +55,7 @@ void ChangerWindow::on_okButton_clicked()
 
 void ChangerWindow::on_cancelButton_clicked()
 {
-    msg->cmd = CHANGECANCEL;
+    msg->cmd = CHANGE_CANCEL;
     changer = false;
     close();
 }

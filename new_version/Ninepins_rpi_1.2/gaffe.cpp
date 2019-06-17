@@ -15,7 +15,6 @@ This program is free software: you can redistribute it and/or modify
 #include "gaffe.h"
 #include "ui_gaffe.h"
 #include "global.h"
-#include "comm.h"
 
 
 
@@ -42,7 +41,7 @@ Gaffe::~Gaffe()
 
 void Gaffe::on_gaffeConfirmedButton_clicked()
 {
-    msg->cmd = GAFFECONFIRMED;
+    msg->cmd = GAFFE_CONFIRMED;
     gaffeSwitch = false;
     gaffeConfirmed = true;
     gaffeRunning = false;
@@ -54,7 +53,7 @@ void Gaffe::on_gaffeConfirmedButton_clicked()
 
 void Gaffe::on_gaffeCancelledButton_clicked()
 {
-    msg->cmd = GAFFECANCELED;
+    msg->cmd = GAFFE_CANCELED;
     gaffeSwitch = false;
     gaffeConfirmed = false;
     gaffeRunning = false;

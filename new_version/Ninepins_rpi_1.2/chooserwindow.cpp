@@ -14,8 +14,7 @@ This program is free software: you can redistribute it and/or modify
 */
 #include "chooserwindow.h"
 #include "ui_chooserwindow.h"
-#include "fullgamewindow.h"
-#include "partialgamewindow.h"
+#include "gamewindow.h"
 #include "global.h"
 #include <iostream>
 #include <stdlib.h>
@@ -39,14 +38,14 @@ ChooserWindow::~ChooserWindow()
 void ChooserWindow::on_fullgameButton_clicked()
 {
 
-    FullGameWindow fg;
+    GameWindow fg(this, Game::FULL_GAME);
     fg.exec();
 }
 
 void ChooserWindow::on_partialgameButton_clicked()
 {
 
-    PartialGameWindow pg;
+    GameWindow pg(this, Game::PARTIAL_GAME);
     pg.exec();
 }
 

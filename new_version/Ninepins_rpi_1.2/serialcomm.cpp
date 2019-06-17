@@ -48,12 +48,13 @@ void SerialComm::handleTimeout()
         if (serialReadData.size() < statusLength)  return;
         Status *received = reinterpret_cast<Status*>(serialReadData.data());
 
-        uint16_t tempChecksum = std::accumulate(received->bytes.begin(), received->bytes.end() - sizeof(Status::checksum), uint16_t(0));
+        uint16_t tempChecksum =
+                std::accumulate(received->bytes.begin(), received->bytes.end() - sizeof(Status::checksum), uint16_t(0));
         if (received->checksum == tempChecksum)
         {
             *msg = *received;
             switch(msg->cmd){
-            case REQREPEAT:
+            case REQ_REPEAT:
                 requestedRepeat = true;
                 break;
             case ACKNOWLEDGED:
@@ -75,7 +76,7 @@ void SerialComm::handleTimeout()
 void SerialComm::handleError(QSerialPort::SerialPortError serialPortError)
 {
     if (serialPortError == QSerialPort::ReadError) {
-        //  qDebug() << QObject::tr("An I/O error occurred while reading the data from port %1, error: %2").arg(serial->portName()).arg(serial->errorString()) << endl;
+          qDebug() << QObject::tr("An I/O error occurred while reading the data from port %1, error: %2").arg(serial->portName()).arg(serial->errorString()) << endl;
         //QCoreApplication::exit(1);
     }
 }
@@ -88,11 +89,11 @@ void SerialComm::onSendMsg(Status *msg)
         serialMessage.append(char(msg->bytes.at(i)));
 
     serial->write(serialMessage);
-//    waitingForAck = true;
-//    requestedRepeat = false;
-//    while(waitingForAck)
-//    {
-//    if (requestedRepeat) onSendMsg(msg);
-//    }
+    waitingForAck = true;
+    requestedRepeat = false;
+    while(waitingForAck)
+    {
+    if (requestedRepeat) onSendMsg(msg);
+    }
 
 }

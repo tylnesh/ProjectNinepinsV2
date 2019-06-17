@@ -1,4 +1,4 @@
-``````````#-------------------------------------------------
+#-------------------------------------------------
 #
 # Project created by QtCreator 2019-06-14T08:32:00
 #
@@ -18,38 +18,33 @@ QMAKE_CXXFLAGS += -std=c++11
 SOURCES += main.cpp\
         mainwindow.cpp \
     chooserwindow.cpp \
-    fullgamewindow.cpp \
     global.cpp \
-    partialgamewindow.cpp \
     gpioclass.cpp \
     changerwindow.cpp \
     delay.cpp \
     buttonchecker.cpp \
-    isgreen.cpp \
     gaffe.cpp \
-    serialcomm.cpp
+    serialcomm.cpp \
+    gamewindow.cpp
 
 HEADERS  += mainwindow.h \
     chooserwindow.h \
-    fullgamewindow.h \
     global.h \
-    partialgamewindow.h \
     gpioclass.h \
     changerwindow.h \
     delay.h \
     buttonchecker.h \
-    isgreen.h \
     gaffe.h \
-    serialcomm.h
+    serialcomm.h \
+    gamewindow.h
 
 FORMS    += mainwindow.ui \
     chooserwindow.ui \
-    fullgamewindow.ui \
-    partialgamewindow.ui \
+    gamewindow.ui \
     changerwindow.ui \
     delay.ui \
-    isgreen.ui \
-    gaffe.ui
+    gaffe.ui \
+
 
 
 RESOURCES += \

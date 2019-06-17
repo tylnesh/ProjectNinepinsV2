@@ -2,7 +2,6 @@
 #define CHOOSERWINDOW_H
 
 #include <QtWidgets/QDialog>
-#include "commthread.h"
 #include "global.h"
 #include <QSerialPort>
 
@@ -15,10 +14,8 @@ class ChooserWindow : public QDialog
     Q_OBJECT
 
 public:
-    explicit ChooserWindow(QWidget *parent = 0);
+    explicit ChooserWindow(QWidget *parent = nullptr);
     ~ChooserWindow();
-    CommThread *commThread;
-    QSerialPort *serial;
 
 private slots:
     void on_fullgameButton_clicked();

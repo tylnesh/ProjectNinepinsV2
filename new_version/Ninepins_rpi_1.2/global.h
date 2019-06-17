@@ -21,9 +21,6 @@ extern int currentRound;
 extern uint8_t lastPoints;
 
 extern int cmdGF;
-//extern int cmdOutGF;
-
-//extern int pointsGF;
 extern int pointsOutGF;
 extern int pointsTmp;
 
@@ -40,23 +37,22 @@ extern bool pinsGF[9];
 extern bool pinsOutGF[9];
 extern bool pinsTmp[9];
 
-extern bool isPartial;
 
 enum commands : uint8_t {
-    FULLGAME = 24,
-    PARTIALGAME = 25,
-    CHANGEOK = 101,
-    CHANGECANCEL = 102,
+    FULL_GAME = 24,
+    PARTIAL_GAME = 25,
+    CHANGE_OK = 101,
+    CHANGE_CANCEL = 102,
     CHANGE = 200,
-    SETTINGPINS = 3,
-    ENDGAME = 100,
-    GAFFECONFIRMED = 206,
-    GAFFECANCELED = 205,
-    CHECKSUMNOTMATCH = 6,
-    FULLGAMEMSG = 1,
-    CHECKGAFFE = 201,
+    SETTING_PINS = 3,
+    END_GAME = 100,
+    GAFFE_CONFIRMED = 206,
+    GAFFE_CANCELED = 205,
+    CHECKSUM_NOT_MATCH = 6,
+    FULL_GAME_MSG = 1,
+    CHECK_GAFFE = 201,
     ACKNOWLEDGED = 203,
-    REQREPEAT = 204
+    REQ_REPEAT = 204
 
 };
 
@@ -89,7 +85,7 @@ union Status {
 
 
 
-enum class Game: uint8_t {FULLGAME = 1, PARTIALGAME = 2};
+enum class Game: uint8_t {FULL_GAME = 1, PARTIAL_GAME = 2};
 
 extern Game currentGameType;
 

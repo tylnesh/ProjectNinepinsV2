@@ -10,7 +10,7 @@
 
 //TODO: Completely rewrite GPIOClass and ButtonChecker - no need for val to be a string.
 
- static GPIOClass *gpio21 = new GPIOClass("21"); //create new GPIO object to be attached to  GPIO21
+ static GPIOClass *gpio = new GPIOClass("21"); //create new GPIO object to be attached to  GPIO21
 
 ButtonChecker::ButtonChecker(QObject *parent) :
     QThread(parent)

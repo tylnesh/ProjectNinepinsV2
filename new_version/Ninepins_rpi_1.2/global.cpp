@@ -42,9 +42,8 @@ bool pinsTmp[9] = {false, false, false, false, false, false, false, false, false
 
 bool changer = false;
 
-bool isPartial = 0;
 
-Game currentGameType = Game::FULLGAME;
+Game currentGameType = Game::FULL_GAME;
 
 
 
