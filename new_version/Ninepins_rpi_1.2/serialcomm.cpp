@@ -50,9 +50,6 @@ void SerialComm::handleTimeout()
 
         uint16_t tempChecksum =
                 std::accumulate(received->bytes.begin(), received->bytes.end() - sizeof(Status::checksum), uint16_t(0));
-        qDebug() << "Temp Checksum: " << tempChecksum;
-        qDebug() << "Received Checksum: " << received->checksum;
-        qDebug() << "Received cmd: " << received->cmd;
 
         if (received->checksum == tempChecksum)
         {
