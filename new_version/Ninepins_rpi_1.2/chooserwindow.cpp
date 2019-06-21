@@ -26,7 +26,7 @@ ChooserWindow::ChooserWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     this->setWindowFlags(Qt::Window);
-    this->showFullScreen();
+    //this->showFullScreen();
     
 }
 

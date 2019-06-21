@@ -50,6 +50,10 @@ void SerialComm::handleTimeout()
 
         uint16_t tempChecksum =
                 std::accumulate(received->bytes.begin(), received->bytes.end() - sizeof(Status::checksum), uint16_t(0));
+        qDebug() << "Temp Checksum: " << tempChecksum;
+        qDebug() << "Received Checksum: " << received->checksum;
+        qDebug() << "Received cmd: " << received->cmd;
+
         if (received->checksum == tempChecksum)
         {
             *msg = *received;
@@ -59,14 +63,10 @@ void SerialComm::handleTimeout()
                 break;
             case ACKNOWLEDGED:
                 waitingForAck = false;
+                break;
             }
-
         }
-
-
         serialReadData = "";
-
-
     }
 
 
@@ -83,15 +83,29 @@ void SerialComm::handleError(QSerialPort::SerialPortError serialPortError)
 
 void SerialComm::onSendMsg(Status *msg)
 {
+
+    msg->checksum = msg->calculateChecksum();
     qDebug() << "Sending msg...";
+    qDebug() << "Wire: " << msg->wire;
+    qDebug() << "Cmd: " << msg->cmd;
+    qDebug() << "Pins: "; for (size_t i = 0; i < PINS; i++) qDebug() << msg->pins[i];
+    qDebug() << "Rounds: " << msg->rounds;
+    qDebug() << "Score: " << msg->score;
+    qDebug() << "Checksum: " << msg->checksum;
+
+
     QByteArray serialMessage;
-    for (size_t i = 0; i < sizeof(msg); i++)
+    for (size_t i = 0; i < sizeof(*msg); i++)
+    {
         serialMessage.append(char(msg->bytes.at(i)));
+    }
 
     serial->write(serialMessage);
+
     waitingForAck = true;
     requestedRepeat = false;
-    while(waitingForAck)
+
+    if(waitingForAck)
     {
     if (requestedRepeat) onSendMsg(msg);
     }

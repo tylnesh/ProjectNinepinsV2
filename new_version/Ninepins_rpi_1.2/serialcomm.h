@@ -36,6 +36,7 @@ private:
 
 
 
+
 };
 
 #endif // SERIALCOMM_H

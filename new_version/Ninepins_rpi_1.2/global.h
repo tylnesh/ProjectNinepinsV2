@@ -1,7 +1,7 @@
 #ifndef GLOBAL_H
 #define GLOBAL_H
 
-#define SERIALTIMER 3000
+#define SERIALTIMER 1000
 #define DUEWIRE 1
 #define DISPLAYWIRE 3
 
@@ -41,18 +41,19 @@ extern bool pinsTmp[9];
 enum commands : uint8_t {
     FULL_GAME = 24,
     PARTIAL_GAME = 25,
-    CHANGE_OK = 101,
-    CHANGE_CANCEL = 102,
-    CHANGE = 200,
+    CHANGE_OK = 41,
+    CHANGE_CANCEL = 42,
+    CHANGE = 40,
     SETTING_PINS = 3,
-    END_GAME = 100,
-    GAFFE_CONFIRMED = 206,
-    GAFFE_CANCELED = 205,
+    END_GAME = 50,
+    GAFFE_CONFIRMED = 66,
+    GAFFE_CANCELED = 65,
     CHECKSUM_NOT_MATCH = 6,
     FULL_GAME_MSG = 1,
-    CHECK_GAFFE = 201,
-    ACKNOWLEDGED = 203,
-    REQ_REPEAT = 204
+    CHECK_GAFFE = 61,
+    ACKNOWLEDGED = 43,
+    REQ_REPEAT = 44,
+    KNOT_CMD = 70
 
 };
 
@@ -78,12 +79,12 @@ union Status {
         for (size_t i = 0; i < PINS; i++) if (pins[i]) points++;
         return points;
     }
+
+    uint16_t calculateChecksum() {
+        return wire + cmd + getPoints() + rounds + score;
+    }
+
 };
-
-
-
-
-
 
 enum class Game: uint8_t {FULL_GAME = 1, PARTIAL_GAME = 2};
 

@@ -75,7 +75,7 @@ uint16_t overloadCounter = 0;
 
 enum gameType{fullgame=1, partialgame=2};
 
-enum commands{
+/*enum commands{
   knotCmd = 3, 
   repeatMsgCmd = 6,  
   checkPinsCmd = 22, 
@@ -92,6 +92,26 @@ enum commands{
   confirmGutterCmd = 206,
   cancelGutterCmd = 205
   };
+  */
+
+ enum commands : uint8_t {
+    FULL_GAME = 24,
+    PARTIAL_GAME = 25,
+    CHANGE_OK = 41,
+    CHANGE_CANCEL = 42,
+    CHANGE_CMD = 40,
+    SETTING_PINS = 3,
+    END_GAME = 50,
+    GAFFE_CONFIRMED = 66,
+    GAFFE_CANCELED = 65,
+    CHECKSUM_NOT_MATCH = 6,
+    FULL_GAME_MSG = 1,
+    CHECK_GAFFE = 61,
+    ACKNOWLEDGED = 43,
+    REQ_REPEAT = 44,
+    KNOT_CMD = 70
+
+};
 
 static constexpr size_t PINS = 9;
 static constexpr int statusLength = PINS + 7;
@@ -114,7 +134,9 @@ union Status {
     }
 };
 
-Status state;
+Status *state;
+
+Status incoming, outgoing;
 
 // print into debug serial functions - if you disable all the debug in the header
 void debugPrintln(String str)
@@ -128,10 +150,12 @@ void debugPrint(String str)
 }
 
 void startReceiving(){
+  //debugPrintln("Receiving");
   analogWrite(TXControl, 0); //Receiving
 }
 
 void startTransmitting(){
+  //debugPrintln("Transmitting");
   analogWrite(TXControl, 255); //Transmitting
 }
 
@@ -304,26 +328,26 @@ void showFallenPins()
 }
 
 bool rcvMsg(); //rcvMsg needs to be declared here, otherwise the compiler screams.
-
+void sndMsg();
 bool setState()
 {
   debugPrintln("***********CHANGING STATE***********");
   while (true)
   {
     rcvMsg();
-    if (state.cmd == confirmNewStateCmd)
+    if (state->cmd == CHANGE_OK)
     {
-      roundsCounter = state.rounds;
-      scoreCounter = state.score;
+      roundsCounter = state->rounds;
+      scoreCounter = state->score;
       for (int i = 0; i < PINCOUNT; i++)
       {
-       toMAG[i] = currentPins[i] = state.pins[i];
+       toMAG[i] = currentPins[i] = state->pins[i];
       }
       showFallenPins();
       return true;
     }
 
-    if (state.cmd == cancelNewStateCmd)
+    if (state->cmd == CHANGE_CANCEL)
     {
       lightLed(LED_ERROR, false);
       return false;
@@ -336,10 +360,10 @@ bool setState()
 
 
 //calculates checksum of a Status
-void calculateChecksum(Status msg){
-msg.checksum = 0;
-msg.checksum += msg.wire + msg.cmd + msg.rounds + msg.score;
-for (int i = 0; i < PINCOUNT; i++) msg.checksum +=msg.pins[i];
+void calculateChecksum(Status *msg){
+msg->checksum = 0;
+msg->checksum += msg->wire + msg->cmd + msg->rounds + msg->score;
+for (int i = 0; i < PINCOUNT; i++) msg->checksum +=msg->pins[i];
 }
 
 void calculateChecksum(Status msg, uint16_t *checksum){
@@ -355,50 +379,82 @@ for (int i = 0; i < PINCOUNT; i++) checksum += msg.pins[i];
 //receive Status
 bool rcvMsg(){
   startReceiving();
-  Status temporary;
+
   while(COMM.available()) {
-    temporary.wire = COMM.read();
-    temporary.cmd = COMM.read();
-    for (int i = 0; i < PINCOUNT; i++) temporary.pins[i] = COMM.read();
-    temporary.rounds = COMM.read();
-    temporary.score = COMM.read();
-    temporary.checksum = COMM.read();
-    delay(100);
-    calculateChecksum(temporary);
+    debugPrintln("receiving msg");
+    
+  Status *temporary;
+  byte buffer[statusLength];
+  COMM.readBytes(buffer, statusLength);
+  temporary = reinterpret_cast<Status*>(buffer);
   
-  debugPrintln("Incoming wire: " + temporary.wire);
-  debugPrintln("Incoming cmd: " + temporary.cmd);
-  debugPrintln("Incoming pins: "); for (int i =0; i < PINCOUNT; i++) debugPrintln((String)temporary.pins[i]);
-  debugPrintln("Incoming rounds: " + temporary.rounds);
-  debugPrintln("Incoming score: " + temporary.score);
-  debugPrintln("Incoming checksum: " + temporary.checksum);
+  debugPrint("Incoming wire: "); debugPrintln((String)temporary->wire);
+  debugPrint("Incoming cmd: "); debugPrintln((String)temporary->cmd);
+  debugPrint("Incoming pins: "); for (int i = 0; i < PINCOUNT; i++) debugPrintln((String)temporary->pins[i]);
+  debugPrint("Incoming rounds: "); debugPrintln((String)temporary->rounds);
+  debugPrint("Incoming score: "); debugPrintln((String)temporary->score);
+  debugPrint("Incoming checksum: "); debugPrintln((String)temporary->checksum);
 
   
   uint16_t checksum = 0;
-  calculateChecksum(temporary, &checksum);
-  debugPrintln("My checksum: " + checksum);
+  checksum += temporary->wire + temporary->cmd + temporary->rounds + temporary->score;
+  for (uint8_t i = 0; i < PINS; i++) checksum += temporary->pins[i];
+  
+  debugPrint("My checksum: "); debugPrintln(String(checksum));
+
+   delay(100);
 
   startTransmitting();
 
-  if (temporary.checksum == checksum){
+  if (temporary->checksum == checksum){
     state = temporary; 
-    COMM.println(true);
-    } else COMM.println(false);
+
+    state->cmd = 43; 
+    debugPrintln("sending ACK");
+    sndMsg();
+    } else {
+    state->cmd = 44;
+    debugPrintln("sending REQ");
+    sndMsg();
+    }
     delay(100); // To send Status over rs485, you need delays to ensure the Status went through
     startReceiving();
     return true;
   }
-  return false;
+  return false ;
   }
+
 
 //sending Status
 void sndMsg(){
   startTransmitting();
+  state->wire = WIRE;
 
+  state->checksum = 0 + state->wire + state->cmd + state->rounds + state->score;
+  for (uint8_t i = 0; i < PINS; i++) state->checksum += state->pins[i];
+  
+  debugPrint("Sending wire: "); debugPrintln((String)state->wire);
+  debugPrint("Sending cmd: "); debugPrintln((String)state->cmd);
+  debugPrint("Sending pins: "); for (int i = 0; i < PINCOUNT; i++) debugPrintln((String)state->pins[i]);
+  debugPrint("Sending rounds: "); debugPrintln((String)state->rounds);
+  debugPrint("Sending score: "); debugPrintln((String)state->score);
+  
+  
+  debugPrint("Sending msg with checksum: "); debugPrintln((String)state->checksum);
+  
+  
+  byte buffer[statusLength];
+  for (size_t i = 0; i < statusLength; i++)
+    {
+        buffer[i] = state->bytes.at(i);
+    }
+
+
+  COMM.write(buffer,sizeof(buffer));
   delay(100); // To send Status over rs485, you need delays to ensure the Status went through
 
   rcvMsg();
-  if (state.cmd == repeatMsgCmd) {
+  if (state->cmd == REQ_REPEAT) {
     sndMsg();
     debugPrintln("Repeating Status due to an error");
     }
@@ -422,12 +478,12 @@ bool checkGutter()
     {
       switch (incoming.cmd)
       {
-      case cancelGutterCmd:
+      case GAFFE_CANCELED:
         debugPrintln("No gutter");
         lightLed(LED_ERROR, false);
         return false;
       
-      case confirmGutterCmd:
+      case GAFFE_CONFIRMED:
         debugPrintln("Gutter confirmed");
         if (currentGameType == fullgame)
         {
@@ -459,13 +515,8 @@ void readMsg()
     debugPrintln("Reading Status");
     switch (incoming.cmd)
     {
-      case deleteIncomingCmd:
-      lightLed(LED_START, false);
-      deleteMessage(incoming);
-      loop();
-      break;
-      
-      case setStateCmd:
+          
+      case CHANGE:
       lightLed(LED_START, false);
       newState = setState();
       if (newState) lightLed(LED_ERROR, true);
@@ -473,13 +524,13 @@ void readMsg()
       deleteMessage(incoming);
       break;
 
-      case settingPinsCmd:
+      case SETTING_PINS:
       isSettingPins = true;
       deleteMessage(incoming);
       delay(100);
       break;
 
-      case checkGutterCmd:
+      case CHECK_GAFFE:
       lightLed(LED_START, false);
       lightLed(LED_ERROR, true);
       gutterButtonPressed = true;
@@ -504,7 +555,7 @@ void untieKnot()
   {
     deleteMessage(incoming);
     deleteMessage(outgoing);
-    outgoing.cmd = knotCmd; // Send Status that Arduino is listening
+    outgoing.cmd = KNOT_CMD; // Send Status that Arduino is listening
     sndMsg();
 
     debugPrintln("If the pins are untied, press 5 on the keyboard");
@@ -514,7 +565,7 @@ void untieKnot()
       {
         rcvMsg();
         delay(10);
-        if (incoming.wire == WIRE && incoming.cmd == knotCmd) break;
+        if (incoming.wire == WIRE && incoming.cmd == KNOT_CMD) break;
       }
       //if the pins are untied, press 5 on the keyboard
       uint8_t val = DEBUG.parseInt();
@@ -770,21 +821,9 @@ void game(uint8_t gType)
       {
         settingPins(currentGameType);
       }
-
-    } 
-    
-
-
-    
+    }
   }
   
-  
-  
-  
-  
-  
-
-
 }
 
 
@@ -800,27 +839,17 @@ void startGame()
     {
       switch (incoming.cmd)
       {
-      case settingPinsCmd:
+      case SETTING_PINS:
         debugPrintln("Setting Pins");
         settingPins(fullgame);
         break;
-      
-      case checkPinsCmd:
-        debugPrintln("Checking Pins");
-        checkPins();
-        break;
-      
-      case checkLedCmd:
-        debugPrintln("Checking LEDs");
-        checkLED();
-        break;
-
-      case fullGameCmd:
+    
+      case FULL_GAME:
         debugPrintln("Starting Full Game");
         game(fullgame);
         break;
 
-      case partialGameCmd:
+      case PARTIAL_GAME:
         debugPrintln("Starting Full Game");
         game(partialgame);
         break;
@@ -834,16 +863,11 @@ void startGame()
   }
 }
 
-
-
-
-
-
 // ******************************  SETUP FUNCTION *******************************
 
 void setup() {
 
-  DEBUG.begin(9600);
+  DEBUG.begin(57600);
   COMM.begin(57600);
 
   startReceiving();
@@ -883,14 +907,25 @@ void setup() {
 
   deleteMessage(outgoing);
   deleteMessage(incoming);
+
+
+
+state->wire = WIRE;
+state->cmd = 0;
+ for (size_t i = 0; i < PINS; i++) state->pins[i] = 0;
+state->rounds = 0;
+state->score = 0;
+state->checksum = 0;
 }
 
 void loop() {
-  roundsCounter = 0;
-  checkLED();
-  if (currentGameType != fullgame) settingPins(fullgame);
-  lightLed(LED_ERROR,true);
-  lightLed(LED_START,true);
-  deleteMessage(outgoing);
-  startGame();
-}
+  //roundsCounter = 0;
+  //checkLED();
+  //if (currentGameType != fullgame) settingPins(fullgame);
+  //lightLed(LED_ERROR,true);
+  //lightLed(LED_START,true);
+  //deleteMessage(outgoing);
+  //startGame();
+
+  rcvMsg();
+} 

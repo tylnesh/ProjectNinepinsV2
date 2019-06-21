@@ -54,17 +54,29 @@ GameWindow::GameWindow(QWidget *parent, Game currentGameType) :
 
     ui->setupUi(this);
     this ->setWindowFlags(Qt::Window);
-    this ->showFullScreen();
+    //this ->showFullScreen();
+
+    state.cmd = 0;
+    state.wire = 0;
+    state.score = 0;
+    state.rounds = 0;
+    for (uint8_t i = 0; i < PINS; i++) state.pins[i] = 0;
+    state.checksum = 0;
+
 
 
     if (currentGameType == Game::FULL_GAME)
     {
         this ->setWindowTitle("PLNA");
         ui->label_7->setText("PLNA");
+        state.wire = DUEWIRE;
+        state.cmd = FULL_GAME;
     }else if(currentGameType == Game::PARTIAL_GAME)
     {
         this ->setWindowTitle("DORAZKA");
         ui->label_7->setText("DORAZKA");
+        state.wire = DUEWIRE;
+        state.cmd = PARTIAL_GAME;
     }
 
 
@@ -81,7 +93,6 @@ GameWindow::GameWindow(QWidget *parent, Game currentGameType) :
     SerialComm *comm = new SerialComm(this, "/dev/ttyUSB0", &state);
     connect(this,SIGNAL(sendMsg(Status *)),comm,SLOT(onSendMsg(Status *)));
 
-    state.cmd = FULL_GAME;
     emit sendMsg(&state);
     //sndScore();
 
@@ -99,8 +110,8 @@ GameWindow::~GameWindow()
 void GameWindow::onRedrawGUI()
 {
 
-    ui->scoreLCD->display(scoreGF);
-    ui->roundsLCD->display(currentRound);
+    ui->scoreLCD->display(state.score);
+    ui->roundsLCD->display(state.rounds);
     ui->pointsLCD->display(state.getPoints());
 
 
