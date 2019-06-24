@@ -119,7 +119,7 @@ union Status {
 
 Status *state;
 
-Status incoming, outgoing;
+Status incoming, *outgoing;
 
 
 // FORWARD DECLARATION
@@ -368,12 +368,13 @@ for (int i = 0; i < PINCOUNT; i++) checksum += msg->pins[i];
 //receive Status
 bool receiveMessage(){
   startReceiving();
+  
 
   while(COMM.available()) {
     debugPrintln("receiving msg");
     
   Status *temporary;
-  byte buffer[statusLength];
+  static byte buffer[statusLength];
   COMM.readBytes(buffer, statusLength);
   temporary = reinterpret_cast<Status*>(buffer);
   
@@ -399,11 +400,11 @@ bool receiveMessage(){
   if (temporary->checksum == checksum){
     state = temporary; 
 
-    state->cmd = 43; 
+    outgoing->cmd = 43; 
     debugPrintln("sending ACK");
     sendMessage();
     } else {
-    state->cmd = 44;
+    outgoing->cmd = 44;
     debugPrintln("sending REQ");
     sendMessage();
     receiveMessage();
@@ -419,29 +420,29 @@ bool receiveMessage(){
 //sending Status
 void sendMessage(){
   startTransmitting();
-  state->wire = WIRE;
+  outgoing->wire = (uint8_t)WIRE;
 
-  state->checksum = 0 + state->wire + state->cmd + state->rounds + state->score;
-  for (uint8_t i = 0; i < PINS; i++) state->checksum += state->pins[i];
+  outgoing->checksum = 0 + outgoing->wire + outgoing->cmd + outgoing->rounds + outgoing->score;
+  for (uint8_t i = 0; i < PINS; i++) outgoing->checksum += outgoing->pins[i];
   
-  debugPrint("Sending wire: "); debugPrintln((String)state->wire);
-  debugPrint("Sending cmd: "); debugPrintln((String)state->cmd);
-  debugPrint("Sending pins: "); for (int i = 0; i < PINCOUNT; i++) debugPrintln((String)state->pins[i]);
-  debugPrint("Sending rounds: "); debugPrintln((String)state->rounds);
-  debugPrint("Sending score: "); debugPrintln((String)state->score);
-  
-  
-  debugPrint("Sending msg with checksum: "); debugPrintln((String)state->checksum);
+  debugPrint("Sending wire: "); debugPrintln((String)outgoing->wire);
+  debugPrint("Sending cmd: "); debugPrintln((String)outgoing->cmd);
+  debugPrint("Sending pins: "); for (int i = 0; i < PINCOUNT; i++) debugPrintln((String)outgoing->pins[i]);
+  debugPrint("Sending rounds: "); debugPrintln((String)outgoing->rounds);
+  debugPrint("Sending score: "); debugPrintln((String)outgoing->score);
   
   
-  byte buffer[statusLength];
+  debugPrint("Sending msg with checksum: "); debugPrintln((String)outgoing->checksum);
+  
+  
+  static byte bufferOut[statusLength];
   for (size_t i = 0; i < statusLength; i++)
     {
-        buffer[i] = state->bytes.at(i);
+        bufferOut[i] = outgoing->bytes.at(i);
     }
 
 
-  COMM.write(buffer,sizeof(buffer));
+  COMM.write(bufferOut,sizeof(bufferOut));
   delay(100); // To send Status over rs485, you need delays to ensure the Status went through
 
   receiveMessage();
@@ -465,7 +466,7 @@ bool checkGutter()
     showFallenPins();
 
     receiveMessage();
-    if (incoming.wire == WIRE)
+    if (incoming.wire == WIRE)   
     {
       switch (incoming.cmd)
       {
@@ -483,7 +484,7 @@ bool checkGutter()
         else
         {
           for (int i = 0; i < PINCOUNT; i++) {
-            toMAG[i] = currentPins[i] = outgoing.pins[i] = tempPins[i];
+            toMAG[i] = currentPins[i] = outgoing->pins[i] = tempPins[i];
             lightLed(LED[i], false);
           }
           lightLed(LED_ERROR, true);
@@ -595,10 +596,11 @@ bool checkSettingPins() {
 
 //checking which pins have fallen - returns true if all are standing, false if at least one has fallen
 bool checkPins() {
-  //checking if there are any Statuss while checking for fallen pins
+  debugPrintln("Checking if the pins are standing");
+  //checking if there are any Status updatess while checking for fallen pins
   bool msgReceived = false;
   msgReceived = receiveMessage(); 
-  if( msgReceived) { readMsg(); msgReceived =false;}
+  if( msgReceived) { readMsg(); msgReceived = false;}
   
     noneFallen = false;
     int countStandingPins = 0;
@@ -608,7 +610,11 @@ bool checkPins() {
       {
         countStandingPins++;
       }
+      else {
+        currentPins[i]++;
+      }
     }
+    debugPrint("Pins left standing: "); debugPrintln((String)countStandingPins);
     if (countStandingPins == PINCOUNT)  return true;
     else return false;
 }
@@ -623,21 +629,23 @@ void settingPins(Game gType)
   uint8_t knotCounter = 0;   // if it reaches the KNOTTHRESHOLD, call employee to untie the knot
 
   lightLed(LED_START,false);
-  debugPrintln("Waiting for pins up");
-
+   
+debugPrintln("Waiting for pins up");
   while(pinsUpCounter < PINSUPTHRESHOLD){
+    
     
     uint32_t pinsUpTimer = millis();
     uint8_t upSensor = 0; 
     bool pinsUp = false;
-    
+    debugPrintln("Counting up to 15 seconds");
     while (millis() < pinsUpTimer + PINS_UP_TIME) {
+      
       digitalWrite(ENGINE_RIGHT, HIGH);
       
       //CHECKING IF THE ENGINES ARE BEING OVERLOADED
       if (digitalRead(PXSENSOR_OVERLOAD) == HIGH) {
           overloadCounter++;
-          debugPrintln("ADDING TO OVERLOAD");
+         // debugPrintln("ADDING TO OVERLOAD");
         }
 
       //CHECKING IF THE OVERLOAD HAS REACHED THE THRESHOLD
@@ -651,7 +659,7 @@ void settingPins(Game gType)
       //CHECKING IF THE PINS ARE KNOTTED UP
       if (knotCounter > KNOTTHRESHOLD) {
           stopEngines();
-          Serial.print("Prid mi rozchlpit kolky");
+          Serial.print("COME UNTIE MY KNOTS");
           untieKnot();
           overloadCounter = 0;
           knotCounter = 0;
@@ -665,7 +673,7 @@ void settingPins(Game gType)
         pinsUp = true;
         break;
       }
-
+    }
       //if pins are up, we set them down to the ground
       if (pinsUp) {
         stopEngines();
@@ -712,7 +720,7 @@ void settingPins(Game gType)
       {
         if (digitalRead(PXSENSOR_DOWN) == LOW) 
         {
-          debugPrintln("PINS ARE SETTLED DOWN");
+          //debugPrintln("PINS ARE SETTLED DOWN");
           stopEngines();
           if (!checkSettingPins()) settingPins(gType);
           debugPrintln("SETTING PINS - COMPLETE");
@@ -721,7 +729,7 @@ void settingPins(Game gType)
         }
       }
 
-  }
+  
   }
 }
 
@@ -732,11 +740,11 @@ void countPoints()
   {
     if (currentPins[i] > 0) 
     {
-      outgoing.pins[i] = 1;
+      outgoing->pins[i] = 1;
       scoreCounter++;
     }  
   }
-  outgoing.score = scoreCounter;
+  outgoing->score = scoreCounter;
 } 
 
 
@@ -788,18 +796,47 @@ void game(Game gType)
     if (!isSettingPins)
     {
       roundsCounter++;
+      debugPrintln("Waiting 4 seconds to count points");
       uint32_t timeToCountPoints = millis();
       while ( (millis() < timeToCountPoints + TIME_TO_COUNT_POINTS_TRESHOLD) && !gutterButtonPressed)
       {
-        checkPins();
+        noneFallen = checkPins();
         showFallenPins();
       }
 
       //if the ball didn't touch the sides, count points
       if (!isGutter) countPoints();
-      outgoing.wire = WIRE;
-      outgoing.cmd = (uint8_t)currentGameType;
-      outgoing.rounds = roundsCounter;
+      outgoing->wire = WIRE;
+      outgoing->cmd = (uint8_t)currentGameType;
+      outgoing->rounds = roundsCounter;
+      
+
+      outgoing->wire = 1;
+      outgoing->cmd = 1;
+      outgoing->rounds = 1;
+      outgoing->score = 2;
+      for (int i = 0; i < PINCOUNT; i++) outgoing->pins[i] = 0;
+      outgoing->pins[1] = 1;
+      outgoing->pins[5] = 1;
+
+
+      
+
+      debugPrintln("Current Status about to be sent over to RPI: ");
+      debugPrintln((String)WIRE);
+      debugPrintln((String)(uint8_t)currentGameType);
+      for (int i = 0; i < PINCOUNT; i++) debugPrintln((String) currentPins[i]);
+      debugPrintln((String)roundsCounter);
+      debugPrintln((String)scoreCounter);
+
+
+      debugPrintln("Current message about to be sent over to RPI: ");
+      debugPrintln((String)outgoing->wire);
+      debugPrintln((String)outgoing->cmd); 
+      for (int i = 0; i < PINCOUNT; i++) debugPrintln((String) outgoing->pins[i]);
+      debugPrintln((String)outgoing->rounds);
+      debugPrintln((String)outgoing->score);
+      
       sendMessage();
 
       //if at least one pin has fallen, run settingPins function
@@ -816,27 +853,25 @@ void game(Game gType)
 
 void startGame()
 {
-  deleteMessage(state);
+  game(Game::FULL_GAME);
   debugPrintln("Project Ninepins - wired version");
-  while (true)
+  while (true) 
   {
     receiveMessage();
-    if (incoming.wire == WIRE)
+    if (state->wire == WIRE)
     {
-      switch (incoming.cmd)
+      debugPrintln("Received msg on wire 1");
+            debugPrintln((String)state->cmd);
+ 
+      switch (state->cmd)
       {
-      case SETTING_PINS:
-        debugPrintln("Setting Pins");
-        settingPins(Game::FULL_GAME);
-        break;
-    
       case FULL_GAME:
         debugPrintln("Starting Full Game");
         game(Game::FULL_GAME);
         break;
 
       case PARTIAL_GAME:
-        debugPrintln("Starting Full Game");
+        debugPrintln("Starting Partial Game");
         game(Game::PARTIAL_GAME);
         break;
     
@@ -896,12 +931,13 @@ void setup() {
 
 void loop() {
   //roundsCounter = 0;
-  //checkLED();
-  //if (currentGameType != fullgame) settingPins(fullgame);
-  //lightLed(LED_ERROR,true);
-  //lightLed(LED_START,true);
+  checkLED();
+  //if (currentGameType != Game::FULL_GAME) settingPins(Game::FULL_GAME);
+  settingPins(Game::FULL_GAME);
+  lightLed(LED_ERROR,true);
+  lightLed(LED_START,true);
   //deleteMessage(outgoing);
-  //startGame();
+  startGame();
 
-  receiveMessage();
+  //receiveMessage();
 } 

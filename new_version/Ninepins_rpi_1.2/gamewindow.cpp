@@ -54,7 +54,7 @@ GameWindow::GameWindow(QWidget *parent, Game currentGameType) :
 
     ui->setupUi(this);
     this ->setWindowFlags(Qt::Window);
-    //this ->showFullScreen();
+    this ->showFullScreen();
 
     state.cmd = 0;
     state.wire = 0;
@@ -88,9 +88,10 @@ GameWindow::GameWindow(QWidget *parent, Game currentGameType) :
     //Thread checking if the Big Red Gaffe Button is pressed
     buttonThread = new ButtonChecker(this);
     connect(buttonThread,SIGNAL(checkGaffe()),this,SLOT(onCheckGaffe()));
+   // buttonThread->start();
 
 
-    SerialComm *comm = new SerialComm(this, "/dev/ttyUSB0", &state);
+     SerialComm *comm = new SerialComm(this, "/dev/ttyUSB0", &state);
     connect(this,SIGNAL(sendMsg(Status *)),comm,SLOT(onSendMsg(Status *)));
 
     emit sendMsg(&state);

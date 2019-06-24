@@ -49,3 +49,6 @@ FORMS    += mainwindow.ui \
 
 RESOURCES += \
     ninepins.qrc
+
+target.path = /home/pi
+INSTALLS += target
