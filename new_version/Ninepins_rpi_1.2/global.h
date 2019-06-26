@@ -1,7 +1,7 @@
 #ifndef GLOBAL_H
 #define GLOBAL_H
 
-#define SERIALTIMER 1000
+#define SERIALTIMER 200
 #define DUEWIRE 1
 #define DISPLAYWIRE 3
 
@@ -43,7 +43,7 @@ enum commands : uint8_t {
     PARTIAL_GAME = 25,
     CHANGE_OK = 41,
     CHANGE_CANCEL = 42,
-    CHANGE = 40,
+    CHANGE_CMD = 40,
     SETTING_PINS = 3,
     END_GAME = 50,
     GAFFE_CONFIRMED = 66,

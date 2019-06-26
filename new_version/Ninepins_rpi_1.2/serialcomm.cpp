@@ -1,6 +1,6 @@
 #include "serialcomm.h"
 #include <QDebug>
-
+#include <QEventLoop>
 SerialComm::SerialComm(QObject *parent, QString path, Status *msg) : QObject(parent), path(path), msg(msg)
 {
 
@@ -51,9 +51,20 @@ void SerialComm::handleTimeout()
         uint16_t tempChecksum =
                 std::accumulate(received->bytes.begin(), received->bytes.end() - sizeof(Status::checksum), uint16_t(0));
 
+
+        qDebug() << "Receiving msg...";
+        qDebug() << "Wire: " << received->wire;
+        qDebug() << "Cmd: " << received->cmd;
+        qDebug() << "Pins: "; for (size_t i = 0; i < PINS; i++) qDebug() << received->pins[i];
+        qDebug() << "Rounds: " << received->rounds;
+        qDebug() << "Score: " << received->score;
+        qDebug() << "Checksum: " << received->checksum;
+
+
+
         if (received->checksum == tempChecksum)
         {
-            *msg = *received;
+            if (received->cmd == uint8_t(currentGameType)) *msg = *received;
             switch(msg->cmd){
             case REQ_REPEAT:
                 requestedRepeat = true;
@@ -61,6 +72,7 @@ void SerialComm::handleTimeout()
             case ACKNOWLEDGED:
                 waitingForAck = false;
                 break;
+            default: onSendScore(msg);
             }
         }
         serialReadData = "";
@@ -108,3 +120,38 @@ void SerialComm::onSendMsg(Status *msg)
     }
 
 }
+
+
+
+void SerialComm::onSendScore(Status *msg){
+
+//    // not sure why there's this timer loop... maybe just a delay from sending the message
+    QEventLoop loop;
+    QTimer::singleShot(50, &loop, SLOT(quit()));
+    loop.exec();
+
+    QByteArray wire,rounds,points,score,checksum;
+
+    wire.append(DISPLAYWIRE);
+    rounds.append(msg->rounds);
+    points.append(msg->getPoints());
+    score.append(msg->score);
+    checksum.append(DISPLAYWIRE+msg->rounds + msg->getPoints() + msg->score);
+
+    serial->write(wire);
+    serial->write(rounds);
+    serial->write(points);
+    serial->write(score);
+    serial->write(checksum);
+
+}
+
+
+
+
+SerialComm::~SerialComm(){
+
+    serial->close();
+}
+
+

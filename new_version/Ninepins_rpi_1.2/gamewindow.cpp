@@ -88,11 +88,12 @@ GameWindow::GameWindow(QWidget *parent, Game currentGameType) :
     //Thread checking if the Big Red Gaffe Button is pressed
     buttonThread = new ButtonChecker(this);
     connect(buttonThread,SIGNAL(checkGaffe()),this,SLOT(onCheckGaffe()));
-   // buttonThread->start();
+    //buttonThread->start();
 
 
-     SerialComm *comm = new SerialComm(this, "/dev/ttyUSB0", &state);
+    comm = new SerialComm(this, "/dev/ttyUSB0", &state);
     connect(this,SIGNAL(sendMsg(Status *)),comm,SLOT(onSendMsg(Status *)));
+    connect(this,SIGNAL(sendScore(Status *)),comm,SLOT(onSendScore(Status *)));
 
     emit sendMsg(&state);
     //sndScore();
@@ -103,7 +104,9 @@ GameWindow::~GameWindow()
 {
     buttonThread->stop = true;
     while(buttonThread->isRunning()) {};
-    serial->close();
+    comm->~SerialComm();
+
+    disconnect(this,SIGNAL(sendMsg(Status *)),comm,SLOT(onSendMsg(Status *)));
     delete ui;
 }
 
@@ -206,7 +209,7 @@ void GameWindow::on_settingPinsButton_clicked()
 
 void GameWindow::on_changeStateButton_clicked()
 {
-    state.cmd = CHANGE;
+    state.cmd = CHANGE_CMD;
     emit sendMsg(&state);
     ChangerWindow ch(this, &state);
     ch.exec();
@@ -214,13 +217,18 @@ void GameWindow::on_changeStateButton_clicked()
 
     if (changer)
     {
+        qDebug() << "Changer sending cmd: " << state.cmd;
+        qDebug() << "Changer sending rounds: " << state.rounds;
+        qDebug() << "Changer sending points: " << state.getPoints();
+        qDebug() << "Changer sending score: " << state.score;
         emit sendMsg(&state);
-        //sndScore();
+        emit sendScore(&state);
         onRedrawGUI();
-        on_settingPinsButton_clicked();
+        //on_settingPinsButton_clicked();
 
     }
     else {
+        qDebug() << "Changer sending cmd: " << state.cmd;
         emit sendMsg(&state);
     }
 }
@@ -240,7 +248,10 @@ void GameWindow::on_endGameButton_clicked()
     //delay allowing the pin setting mechanism to finish it's job, before BFUs start new game
     Delay d;
     d.exec();
-
+    while (d.isVisible())
+    {
+        emit sendMsg(&state);
+    }
     close();
 }
 
@@ -276,28 +287,5 @@ void GameWindow::savePoints(){
 
 //TODO: REMAKE THE COMMUNICATION INTO SEPARATE CLAAS
 
-
-//void FullGameWindow::sndScore(){
-
-//    // not sure why there's this timer loop... maybe just a delay from sending the message
-//    QEventLoop loop;
-//    QTimer::singleShot(50, &loop, SLOT(quit()));
-//    loop.exec();
-
-//    QByteArray wire,rounds,points,score,checksum;
-
-//    wire.append(DISPLAYWIRE);
-//    rounds.append(roundsGF);
-//    points.append(pointsGF);
-//    score.append(scoreGF);
-//    checksum.append(DISPLAYWIRE+roundsGF+pointsGF+scoreGF);
-
-//    serial->write(wire);
-//    serial->write(rounds);
-//    serial->write(points);
-//    serial->write(score);
-//    serial->write(checksum);
-
-//}
 
 

@@ -12,7 +12,7 @@
 #include <QThread>
 #include "buttonchecker.h"
 #include <QTimer>
-
+#include "serialcomm.h"
 
 namespace Ui {
 class GameWindow;
@@ -47,6 +47,7 @@ public:
 
 signals:
     void sendMsg(Status *msg);
+    void sendScore(Status *msg);
 
 
 
@@ -80,6 +81,7 @@ private slots:
 private:
     Game currentGameType;
     Ui::GameWindow *ui;
+    SerialComm *comm;
     Status state;
 
 

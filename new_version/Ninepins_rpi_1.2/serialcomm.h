@@ -14,7 +14,7 @@ class SerialComm : public QObject
     Q_OBJECT
 public:
     explicit SerialComm(QObject *parent = nullptr, QString path = "/dev/ttyUSB0", Status *msg = nullptr);
-
+    ~SerialComm();
 signals:
 
 public slots:
@@ -22,6 +22,7 @@ public slots:
     void handleTimeout();
     void handleError(QSerialPort::SerialPortError error);
     void onSendMsg(Status *msg);
+    void onSendScore(Status *msg);
 
 
 private:
