@@ -58,7 +58,7 @@ uint8_t LED[9] = {2, 3, 4, 5, 6, 7, 8, 9, 10};
 
 //STATE variables
 
-uint8_t currentPins[PINCOUNT] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+//uint8_t currentPins[PINCOUNT] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 uint8_t toMAG[PINCOUNT] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 bool noneFallen = false;
@@ -117,15 +117,16 @@ union Status {
     }
 };
 
-Status *state;
+Status *state, *incoming, *outgoing;
 
-Status incoming, *outgoing;
+
 
 
 // FORWARD DECLARATION
 
 bool receiveMessage(); //receiveMessage needs to be declared here, otherwise the compiler screams.
 void sendMessage();
+void startGame();
 
 
 
@@ -152,6 +153,8 @@ void startTransmitting(){
 bool checkPins();
 void resetPinCount();
 void game(uint8_t gType);
+void settingPins(Game gType);
+
 
 // Controlling the LEDs - Passing "true" sets the LEDS to turn on, false dims them down.
 void lightAllLed(bool b)
@@ -227,7 +230,7 @@ void showCircle()
   debugPrintln("Animating circle of LEDs");
   for (int i = 0; i < PINCOUNT; i++)
   {
-    if (currentPins[i] > 0) lightLed(LED[i], true);
+    if (state->pins[i] > 0) lightLed(LED[i], true);
   }
 
   lightLed(LED[0], true);
@@ -296,7 +299,7 @@ void showFallenPins()
   
   for (int i = 0; i < PINCOUNT; i++)
   {
-    if (currentPins[i] > 0)
+    if (state->pins[i] > 0)
     {
       fallenCounter++;
       lightLed(LED[i], true);
@@ -304,7 +307,7 @@ void showFallenPins()
     } else lightLed(LED[i], false);
   }
 
-  if ((fallenCounter == 8) && (currentPins[4] == 0) && (currentGameType == Game::FULL_GAME))
+  if ((fallenCounter == 8) && (state->pins[4] == 0) && (currentGameType == Game::FULL_GAME))
   {
     showCircle();
   }
@@ -322,20 +325,24 @@ bool setState()
   while (true)
   {
     receiveMessage();
-    if (state->cmd == CHANGE_OK)
+    if (incoming->cmd == CHANGE_OK)
     {
-      roundsCounter = state->rounds;
-      scoreCounter = state->score;
+        debugPrintln("***********CHANGING STATE = OK***********");
+
+      state->rounds = incoming->rounds;
+      state->score = incoming->score; 
       for (int i = 0; i < PINCOUNT; i++)
       {
-       toMAG[i] = currentPins[i] = state->pins[i];
+       toMAG[i] = state->pins[i] = incoming->pins[i];
       }
       showFallenPins();
       return true;
     }
 
-    if (state->cmd == CHANGE_CANCEL)
+    if (incoming->cmd == CHANGE_CANCEL)
     {
+              debugPrintln("***********CHANGING STATE = CANCEL***********");
+
       lightLed(LED_ERROR, false);
       return false;
     }  
@@ -368,15 +375,14 @@ for (int i = 0; i < PINCOUNT; i++) checksum += msg->pins[i];
 //receive Status
 bool receiveMessage(){
   startReceiving();
-  
-
   while(COMM.available()) {
     debugPrintln("receiving msg");
     
-  Status *temporary;
-  static byte buffer[statusLength];
-  COMM.readBytes(buffer, statusLength);
-  temporary = reinterpret_cast<Status*>(buffer);
+    Status *temporary;
+    static byte buffer[statusLength];
+    COMM.readBytes(buffer, statusLength);
+    temporary = reinterpret_cast<Status*>(buffer);
+
   
   debugPrint("Incoming wire: "); debugPrintln((String)temporary->wire);
   debugPrint("Incoming cmd: "); debugPrintln((String)temporary->cmd);
@@ -398,20 +404,21 @@ bool receiveMessage(){
   startTransmitting();
 
   if (temporary->checksum == checksum){
-    state = temporary; 
-
-    outgoing->cmd = 43; 
+    if (temporary->wire == WIRE) incoming = temporary; 
+    
+    outgoing->cmd = ACKNOWLEDGED; 
     debugPrintln("sending ACK");
     sendMessage();
     } else {
-    outgoing->cmd = 44;
+    
+    outgoing->cmd = REQ_REPEAT;
     debugPrintln("sending REQ");
     sendMessage();
+    delay(200);
     receiveMessage();
     }
-    delay(100); // To send Status over rs485, you need delays to ensure the Status went through
-    startReceiving();
     return true;
+  
   }
   return false ;
   }
@@ -446,7 +453,7 @@ void sendMessage(){
   delay(100); // To send Status over rs485, you need delays to ensure the Status went through
 
   receiveMessage();
-  if (state->cmd == REQ_REPEAT) {
+  if (incoming->cmd == REQ_REPEAT) {
     sendMessage();
     debugPrintln("Repeating Status due to an error");
     }
@@ -456,7 +463,7 @@ bool checkGutter()
 {
   debugPrintln("Checking whether the ball hit the gutter");
   bool tempPins[PINCOUNT] = {0,0,0,0,0,0,0,0,0}; 
-  for (int i = 0; i < PINCOUNT; i++) tempPins[i] = currentPins[i];
+  for (int i = 0; i < PINCOUNT; i++) tempPins[i] = state->pins[i];
   lightLed(LED_ERROR, true);
 
   while (true)
@@ -466,9 +473,9 @@ bool checkGutter()
     showFallenPins();
 
     receiveMessage();
-    if (incoming.wire == WIRE)   
+    if (incoming->wire == WIRE)   
     {
-      switch (incoming.cmd)
+      switch (incoming->cmd)
       {
       case GAFFE_CANCELED:
         debugPrintln("No gutter");
@@ -484,7 +491,7 @@ bool checkGutter()
         else
         {
           for (int i = 0; i < PINCOUNT; i++) {
-            toMAG[i] = currentPins[i] = outgoing->pins[i] = tempPins[i];
+            toMAG[i] = state->pins[i] = outgoing->pins[i] = tempPins[i];
             lightLed(LED[i], false);
           }
           lightLed(LED_ERROR, true);
@@ -502,21 +509,24 @@ bool checkGutter()
 
 void readMsg()
 {
-  if (incoming.wire == WIRE) 
+  if (incoming->wire == WIRE) 
   {
     debugPrintln("Reading Status");
-    switch (state->cmd)
+    switch (incoming->cmd)
     {
           
-      case CHANGE:
+      case CHANGE_CMD:
       lightLed(LED_START, false);
-      newState = setState();
-      if (newState) lightLed(LED_ERROR, true);
+      if (setState()) 
+      {
+        lightLed(LED_ERROR, true);
+      }
       lightLed(LED_START, true);
       break;
 
       case SETTING_PINS:
-      isSettingPins = true;
+      settingPins(currentGameType);
+      //isSettingPins = true;
       delay(100);
       break;
 
@@ -526,6 +536,10 @@ void readMsg()
       gutterButtonPressed = true;
       debugPrintln("The gutter button has been pressed");
       isGutter = checkGutter();
+      break;
+
+      case END_GAME:
+      startGame();
       break;
     
       default:
@@ -543,7 +557,7 @@ void readMsg()
 void untieKnot()
   {
     
-    state->cmd = KNOT_CMD; // Send Status that Arduino is listening
+    outgoing->cmd = KNOT_CMD; // Send Status that Arduino is listening
     sendMessage();
 
     debugPrintln("If the pins are untied, press 5 on the keyboard");
@@ -553,7 +567,7 @@ void untieKnot()
       {
         receiveMessage();
         delay(10);
-        if (incoming.wire == WIRE && incoming.cmd == KNOT_CMD) break;
+        if (incoming->wire == WIRE && incoming->cmd == KNOT_CMD) break;
       }
       //if the pins are untied, press 5 on the keyboard
       uint8_t val = DEBUG.parseInt();
@@ -576,7 +590,7 @@ void pinsLower()
  void resetPinCount()
   {
     debugPrintln("************ZEROING THE PINS*************");
-    for (int i = 0; i < PINCOUNT; i++) currentPins[i] = 0;
+    for (int i = 0; i < PINCOUNT; i++) state->pins[i] = 0;
   }
 
 //checking if the pins don't fall while setting down - returns true if all are standing, false if at least one has fallen
@@ -611,7 +625,7 @@ bool checkPins() {
         countStandingPins++;
       }
       else {
-        currentPins[i]++;
+        state->pins[i]++;
       }
     }
     debugPrint("Pins left standing: "); debugPrintln((String)countStandingPins);
@@ -706,7 +720,7 @@ debugPrintln("Waiting for pins up");
             {
             digitalWrite(MAG[i], LOW);
             toMAG[i] = 0; 
-            currentPins[i] = 0;
+            state->pins[i] = 0;
             }
             lightAllLed(false);
             pinsLower();
@@ -738,7 +752,7 @@ void countPoints()
     
   for (int i = 0; i < PINCOUNT; i++)
   {
-    if (currentPins[i] > 0) 
+    if (state->pins[i] > 0) 
     {
       outgoing->pins[i] = 1;
       scoreCounter++;
@@ -756,14 +770,14 @@ void game(Game gType)
   if (currentGameType == Game::FULL_GAME) 
   {
     debugPrintln("FULL GAME");
-    roundsCounter = 0;
-    scoreCounter = 0;
+    state->rounds = 0;
+    state->score = 0;
   }
   
   if (currentGameType == Game::PARTIAL_GAME) 
   {
     debugPrintln("PARTIAL GAME");
-    roundsCounter = 0; //score only zeores in full game, as partial game is a continuation of the full game.
+    state->rounds = 0; //score only zeores in full game, as partial game is a continuation of the full game.
   }
   
   lightAllLed(false);
@@ -810,37 +824,9 @@ void game(Game gType)
       outgoing->cmd = (uint8_t)currentGameType;
       outgoing->rounds = roundsCounter;
       
-
-     
-
-
-      
-
-      debugPrintln("Current Status about to be sent over to RPI: ");
-      debugPrintln((String)WIRE);
-      debugPrintln((String)(uint8_t)currentGameType);
-      for (int i = 0; i < PINCOUNT; i++) debugPrintln((String) currentPins[i]);
-      debugPrintln((String)roundsCounter);
-      debugPrintln((String)scoreCounter);
-
-
-       outgoing->wire = 1;
-      outgoing->cmd = 1;
-      outgoing->rounds = 1;
-      outgoing->score = 2;
-      for (int i = 0; i < PINCOUNT; i++) outgoing->pins[i] = 0;
-      outgoing->pins[1] = 1;
-      outgoing->pins[5] = 1;
-
-
-      debugPrintln("Current message about to be sent over to RPI: ");
-      debugPrintln((String)outgoing->wire);
-      debugPrintln((String)outgoing->cmd); 
-      for (int i = 0; i < PINCOUNT; i++) debugPrintln((String) outgoing->pins[i]);
-      debugPrintln((String)outgoing->rounds);
-      debugPrintln((String)outgoing->score);
-      
       sendMessage();
+      if (currentGameType == Game::FULL_GAME) outgoing->pins = {0,0,0,0,0,0,0,0,0};
+      
 
       //if at least one pin has fallen, run settingPins function
       if (!noneFallen) 
@@ -856,17 +842,22 @@ void game(Game gType)
 
 void startGame()
 {
-  game(Game::FULL_GAME);
+  //game(Game::FULL_GAME);
+
+  checkLED();
+  if (currentGameType == Game::PARTIAL_GAME) settingPins(Game::FULL_GAME);
+  lightLed(LED_ERROR,true);
+  lightLed(LED_START,true);
   debugPrintln("Project Ninepins - wired version");
   while (true) 
   {
     receiveMessage();
-    if (state->wire == WIRE)
+    if (incoming->wire == WIRE)
     {
-      debugPrintln("Received msg on wire 1");
-            debugPrintln((String)state->cmd);
+      //debugPrintln("Received msg on wire 1");
+        //    debugPrintln((String)state->cmd);
  
-      switch (state->cmd)
+      switch(incoming->cmd)
       {
       case FULL_GAME:
         debugPrintln("Starting Full Game");
@@ -930,41 +921,25 @@ void setup() {
   currentGameType = Game::FULL_GAME;
 
   deleteMessage(state);
-  static byte buffer[statusLength];
-  COMM.readBytes(buffer, statusLength);
-  outgoing = reinterpret_cast<Status*>(buffer);
+  //outgoing is a pointer to an union and needs to be initialized like this 
+  static byte bufferOutgoing[statusLength];
+  outgoing = reinterpret_cast<Status*>(bufferOutgoing);
+
+  static byte bufferState[statusLength];
+  state = reinterpret_cast<Status*>(bufferState);
 }
 
 void loop() {
-  //roundsCounter = 0;
+  roundsCounter = 0;
   checkLED();
   
       //if (currentGameType != Game::FULL_GAME) settingPins(Game::FULL_GAME);
-  //settingPins(Game::FULL_GAME);
-  //lightLed(LED_ERROR,true);
-  //lightLed(LED_START,true);
+  settingPins(Game::FULL_GAME);
+  lightLed(LED_ERROR,true);
+  lightLed(LED_START,true);
       //deleteMessage(outgoing);
-  //startGame();
+  startGame();
 
   //receiveMessage();
-
-
-      outgoing->wire = 1;
-      outgoing->cmd = 1;
-      outgoing->rounds = 3;
-      outgoing->score = 12;
-      for (int i = 0; i < PINCOUNT; i++) outgoing->pins[i] = 0;
-      outgoing->pins[1] = 1;
-      outgoing->pins[5] = 1;
-
-
-      debugPrintln("Current message about to be sent over to RPI: ");
-      debugPrintln(String(outgoing->wire));
-      debugPrintln(String(outgoing->cmd)); 
-      for (int i = 0; i < PINCOUNT; i++) debugPrintln(String(outgoing->pins[i]));
-      debugPrintln(String(outgoing->rounds));
-      debugPrintln(String(outgoing->score));
-      
-      sendMessage();
 
 } 
