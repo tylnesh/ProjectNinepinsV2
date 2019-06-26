@@ -811,13 +811,7 @@ void game(Game gType)
       outgoing->rounds = roundsCounter;
       
 
-      outgoing->wire = 1;
-      outgoing->cmd = 1;
-      outgoing->rounds = 1;
-      outgoing->score = 2;
-      for (int i = 0; i < PINCOUNT; i++) outgoing->pins[i] = 0;
-      outgoing->pins[1] = 1;
-      outgoing->pins[5] = 1;
+     
 
 
       
@@ -828,6 +822,15 @@ void game(Game gType)
       for (int i = 0; i < PINCOUNT; i++) debugPrintln((String) currentPins[i]);
       debugPrintln((String)roundsCounter);
       debugPrintln((String)scoreCounter);
+
+
+       outgoing->wire = 1;
+      outgoing->cmd = 1;
+      outgoing->rounds = 1;
+      outgoing->score = 2;
+      for (int i = 0; i < PINCOUNT; i++) outgoing->pins[i] = 0;
+      outgoing->pins[1] = 1;
+      outgoing->pins[5] = 1;
 
 
       debugPrintln("Current message about to be sent over to RPI: ");
@@ -927,17 +930,41 @@ void setup() {
   currentGameType = Game::FULL_GAME;
 
   deleteMessage(state);
+  static byte buffer[statusLength];
+  COMM.readBytes(buffer, statusLength);
+  outgoing = reinterpret_cast<Status*>(buffer);
 }
 
 void loop() {
   //roundsCounter = 0;
   checkLED();
-  //if (currentGameType != Game::FULL_GAME) settingPins(Game::FULL_GAME);
-  settingPins(Game::FULL_GAME);
-  lightLed(LED_ERROR,true);
-  lightLed(LED_START,true);
-  //deleteMessage(outgoing);
-  startGame();
+  
+      //if (currentGameType != Game::FULL_GAME) settingPins(Game::FULL_GAME);
+  //settingPins(Game::FULL_GAME);
+  //lightLed(LED_ERROR,true);
+  //lightLed(LED_START,true);
+      //deleteMessage(outgoing);
+  //startGame();
 
   //receiveMessage();
+
+
+      outgoing->wire = 1;
+      outgoing->cmd = 1;
+      outgoing->rounds = 3;
+      outgoing->score = 12;
+      for (int i = 0; i < PINCOUNT; i++) outgoing->pins[i] = 0;
+      outgoing->pins[1] = 1;
+      outgoing->pins[5] = 1;
+
+
+      debugPrintln("Current message about to be sent over to RPI: ");
+      debugPrintln(String(outgoing->wire));
+      debugPrintln(String(outgoing->cmd)); 
+      for (int i = 0; i < PINCOUNT; i++) debugPrintln(String(outgoing->pins[i]));
+      debugPrintln(String(outgoing->rounds));
+      debugPrintln(String(outgoing->score));
+      
+      sendMessage();
+
 } 
